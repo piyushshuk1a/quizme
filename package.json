@@ -1,0 +1,27 @@
+{
+  "name": "quizme",
+  "version": "1.0.0",
+  "description": "Quizme Application - Create Quizes Using AI",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "author": "Piyush Shukla",
+  "license": "ISC",
+  "lint-staged": {
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+      "npx prettier --write",
+      "bash lint.sh frontend"
+    ],
+    "backend/**/*.{js,ts}": [
+      "npx prettier --write",
+      "bash lint.sh backend"
+    ]
+  },
+  "devDependencies": {
+    "eslint": "^9.35.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
+    "prettier": "^3.6.2"
+  }
+}
