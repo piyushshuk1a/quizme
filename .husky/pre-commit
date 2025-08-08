@@ -1,0 +1,4 @@
+# !/bin/shcle
+# .husky/pre-commit
+
+npx lint-staged
