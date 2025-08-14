@@ -7,7 +7,7 @@ export const App = () => {
     <div>
       <Stack gap={10} padding={12}>
         <AppLogo />
-        <AppLogo width={80} height={80} />
+        <AppLogo size={80} />
       </Stack>
       <Stack gap={10} padding={12}>
         <h1>Hello Quizme</h1>
