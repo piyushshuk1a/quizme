@@ -1,6 +1,6 @@
-import { Button, Link, Stack } from '@mui/material';
+import { Link, Stack } from '@mui/material';
 
-import { AppLogo } from '@/components';
+import { AppLogo, Button } from '@/components';
 
 export const Home = () => {
   return (
@@ -35,6 +35,12 @@ export const Home = () => {
           <Button variant="outlined" color="secondary">
             Secondary
           </Button>
+        </div>
+        <div>
+          <Button color="gradient">Secondary</Button>
+        </div>
+        <div>
+          <Button color="white">Secondary</Button>
         </div>
       </Stack>
     </div>

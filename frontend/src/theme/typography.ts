@@ -19,7 +19,7 @@ export const TYPOGRAPHY: TypographyVariantsOptions = {
    * @note Default Typography variants can also be overridden by redefining new
    * configuration for corresponding variants here
    */
-  fontFamily: ['Poppins', 'sans-serif'].join(','),
+  fontFamily: ['Poppins', 'sans-serif'].join(', '),
   title: {
     fontSize: pxToRem(fontStyle.title.fontSize),
     lineHeight: pxToRem(fontStyle.title.lineHeight),
