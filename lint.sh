@@ -3,7 +3,7 @@
 cd $1
 
 # Run eslint and store its exit code
-npx eslint
+npx eslint --fix
 eslint_exit_code=$?
 
 # Exit with the combined exit code
