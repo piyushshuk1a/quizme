@@ -1,0 +1,1 @@
+export const MAX_HORIZONTAL_WIDTH = 1280;

@@ -1,3 +1,5 @@
+import { THEME_COLORS } from '../theme.constants';
+
 import { LinkBehavior } from './subComponents';
 
 import type { Components } from '@mui/material';
@@ -9,7 +11,12 @@ export const MuiLink: Components['MuiLink'] = {
   styleOverrides: {
     root: {
       textDecoration: 'none',
-      color: 'white',
+      color: THEME_COLORS.text.primary,
+      opacity: '.8',
+
+      '&:hover': {
+        opacity: 1,
+      },
     },
   },
 };

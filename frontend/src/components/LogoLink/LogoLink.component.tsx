@@ -4,7 +4,7 @@ import { AppLogo } from '../AppLogo';
 
 export const LogoLink = () => {
   return (
-    <Link to="/">
+    <Link to="/" sx={{ display: 'inline-block', opacity: 1 }}>
       <Box display="flex" gap={6} alignItems="center">
         <AppLogo />
         <Typography
