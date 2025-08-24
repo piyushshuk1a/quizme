@@ -42,6 +42,7 @@ export const Button = ({
         fontWeight: 'bold',
         ...(color === 'gradient' && gradientStyles),
         ...(color === 'white' && whiteStyles),
+        textTransform: 'unset',
       }}
     />
   );

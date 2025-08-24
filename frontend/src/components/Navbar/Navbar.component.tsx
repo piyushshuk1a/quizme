@@ -12,6 +12,7 @@ export const Navbar = () => {
     <Box
       display="flex"
       alignItems="center"
+      justifyContent="center"
       sx={{
         height: '72px',
         padding: '0 24px',
