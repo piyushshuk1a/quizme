@@ -1,3 +1,4 @@
+import { Footer } from '@/components';
 import { Features, GetStarted, HeroSection } from '@/containers';
 
 export const Home = () => {
@@ -6,6 +7,7 @@ export const Home = () => {
       <HeroSection />
       <Features />
       <GetStarted />
+      <Footer />
     </>
   );
 };
