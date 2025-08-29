@@ -1,4 +1,5 @@
-import { Box, Link } from '@mui/material';
+import { useAuth0 } from '@auth0/auth0-react';
+import { Avatar, Box, Link } from '@mui/material';
 
 import { NAVBAR_BG_COLOR } from '@/theme';
 import { pxToRem } from '@/utils';
@@ -8,6 +9,8 @@ import { Container } from '../Container';
 import { LogoLink } from '../LogoLink';
 
 export const Navbar = () => {
+  const { user, loginWithRedirect, isAuthenticated, logout } = useAuth0();
+
   return (
     <Box
       display="flex"
@@ -52,10 +55,19 @@ export const Navbar = () => {
           </Link>
         </Box>
 
-        <Box display="flex" gap={12}>
-          <Button color="secondary">Log In</Button>
-          <Button color="gradient">Sign Up</Button>
-        </Box>
+        {!isAuthenticated && (
+          <Button color="gradient" onClick={() => loginWithRedirect()}>
+            Log In
+          </Button>
+        )}
+        {isAuthenticated && (
+          <Box display="flex" gap={12}>
+            <Button color="secondary" onClick={() => logout()}>
+              Log Out
+            </Button>
+            <Avatar alt={user?.name} src={user?.picture} />
+          </Box>
+        )}
       </Container>
     </Box>
   );

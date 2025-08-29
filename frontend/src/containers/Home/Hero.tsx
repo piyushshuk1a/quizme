@@ -1,10 +1,14 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { AdminPanelSettings, School } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
 
 import { Button, Container } from '@/components';
+import { USER_ROLES } from '@/constants';
 import { pxToRem } from '@/utils';
 
 export const HeroSection = () => {
+  const { loginWithRedirect, isAuthenticated } = useAuth0();
+
   return (
     <Box
       sx={{
@@ -47,14 +51,62 @@ export const HeroSection = () => {
           platform. Perfect for educators, teams, and anyone looking to test
           their knowledge.
         </Typography>
-        <Box display="flex" gap={40} marginTop={12}>
-          <Button color="gradient" startIcon={<AdminPanelSettings />}>
-            Start as Admin
-          </Button>
-          <Button color="secondary" startIcon={<School />}>
-            Join as Candidate
-          </Button>
-        </Box>
+        {!isAuthenticated && (
+          <Box display="flex" gap={40} marginTop={12}>
+            <Button
+              color="gradient"
+              startIcon={<AdminPanelSettings />}
+              onClick={() =>
+                loginWithRedirect({
+                  authorizationParams: { screen_hint: 'signup' },
+                  appState: { role: USER_ROLES.admin },
+                })
+              }
+            >
+              Start as Admin
+            </Button>
+            <Button
+              color="secondary"
+              startIcon={<School />}
+              onClick={() =>
+                loginWithRedirect({
+                  authorizationParams: { screen_hint: 'signup' },
+                  appState: { role: USER_ROLES.candidate },
+                })
+              }
+            >
+              Join as Candidate
+            </Button>
+          </Box>
+        )}
+        {isAuthenticated && (
+          <Box display="flex" gap={40} marginTop={12}>
+            <Button
+              color="gradient"
+              startIcon={<AdminPanelSettings />}
+              onClick={() =>
+                loginWithRedirect({
+                  authorizationParams: { screen_hint: 'signup' },
+                  appState: { role: USER_ROLES.admin },
+                })
+              }
+            >
+              Create a Quize
+            </Button>
+            <Button
+              color="secondary"
+              startIcon={<School />}
+              onClick={() =>
+                loginWithRedirect({
+                  authorizationParams: { screen_hint: 'signup' },
+                  appState: { role: USER_ROLES.candidate },
+                })
+              }
+            >
+              Take a Quiz
+            </Button>
+          </Box>
+        )}
       </Container>
     </Box>
   );
