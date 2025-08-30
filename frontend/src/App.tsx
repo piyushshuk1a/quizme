@@ -2,11 +2,14 @@ import { Auth0Provider } from '@auth0/auth0-react';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { BrowserRouter } from 'react-router';
 
+import { useSignupRole, type UserRoles } from '@/hooks';
 import { THEME } from '@/theme';
 
 import { AppRoutes } from './routes';
 
 export const App = () => {
+  const { updateRole } = useSignupRole();
+
   return (
     <BrowserRouter>
       <Auth0Provider
@@ -15,7 +18,11 @@ export const App = () => {
         authorizationParams={{
           redirect_uri: window.location.origin,
         }}
-        onRedirectCallback={() => {}}
+        onRedirectCallback={(appState) => {
+          if (appState?.role) {
+            updateRole(appState.role as UserRoles);
+          }
+        }}
       >
         <ThemeProvider theme={THEME}>
           <CssBaseline />
