@@ -9,6 +9,9 @@ const envSchema = Joi.object({
   LOG_LEVEL: Joi.string()
     .valid('info', 'warn', 'error', 'debug')
     .default('info'),
+  AUTH0_DOMAIN: Joi.string().required(),
+  AUTH0_M2M_CLIENT_ID: Joi.string().required(),
+  AUTH0_M2M_CLIENT_SECRET: Joi.string().required(),
 }).unknown(); // Allow additional environment variables
 
 // Validate the environment variables
@@ -25,4 +28,7 @@ export const config = {
   databaseUrl: envVars.DATABASE_URL as string,
   jwtSecret: envVars.JWT_SECRET as string,
   logLevel: envVars.LOG_LEVEL as 'info' | 'warn' | 'error' | 'debug',
+  auth0Domain: envVars.AUTH0_DOMAIN as string,
+  auth0M2MClientId: envVars.AUTH0_M2M_CLIENT_ID as string,
+  auth0M2MClientSecret: envVars.AUTH0_M2M_CLIENT_SECRET as string,
 };
