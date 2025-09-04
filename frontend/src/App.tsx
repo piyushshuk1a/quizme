@@ -1,11 +1,14 @@
 import { Auth0Provider } from '@auth0/auth0-react';
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import { Report } from '@mui/icons-material';
+import { Box, CssBaseline, ThemeProvider, Typography } from '@mui/material';
+import { SnackbarProvider } from 'notistack';
 import { BrowserRouter } from 'react-router';
 
 import { useSignupRole, type UserRoles } from '@/hooks';
 import { THEME } from '@/theme';
 
 import { AppRoutes } from './routes';
+import { pxToRem } from './utils';
 
 export const App = () => {
   const { updateRole } = useSignupRole();
@@ -25,10 +28,35 @@ export const App = () => {
           }
         }}
       >
-        <ThemeProvider theme={THEME}>
-          <CssBaseline />
-          <AppRoutes />
-        </ThemeProvider>
+        <SnackbarProvider
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          Components={{
+            warning: (props) => (
+              <Box
+                {...props}
+                display="flex"
+                alignItems="center"
+                padding={pxToRem(13, 20)}
+                borderRadius={pxToRem(4)}
+                gap={pxToRem(8)}
+                sx={{ backgroundColor: '#DF6D14' }}
+              >
+                <Report sx={{ fontSize: 20 }} />
+                <Typography
+                  fontSize={pxToRem(14)}
+                  sx={{ fontFamily: 'Inter, sans-serif' }}
+                >
+                  {props.message}
+                </Typography>
+              </Box>
+            ),
+          }}
+        >
+          <ThemeProvider theme={THEME}>
+            <CssBaseline />
+            <AppRoutes />
+          </ThemeProvider>
+        </SnackbarProvider>
       </Auth0Provider>
     </BrowserRouter>
   );
