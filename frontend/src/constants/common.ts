@@ -16,3 +16,9 @@ export const API_REQUEST_TYPES = {
   patch: 'PATCH',
   delete: 'DELETE',
 } as const;
+
+export const API_ENDPOINTS = {
+  userRole: '/api/users/:id/role',
+} as const;
+
+export const ROLE_NAMESPACE = 'https://myapp.com/role';

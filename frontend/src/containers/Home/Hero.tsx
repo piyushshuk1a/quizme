@@ -91,7 +91,7 @@ export const HeroSection = () => {
                 })
               }
             >
-              Create a Quize
+              Create a Quiz
             </Button>
             <Button
               color="secondary"

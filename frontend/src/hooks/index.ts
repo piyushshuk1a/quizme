@@ -1,3 +1,3 @@
 export * from './swr';
-export * from './useAuth';
+export * from './useRoleSync';
 export * from './useSignupRole';

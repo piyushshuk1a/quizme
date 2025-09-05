@@ -17,7 +17,7 @@ app.use(express.json());
 app.get('/health', (_req, res) => {
   res.status(200).send('OK');
 });
-app.use('/users', userRoutes);
+app.use('/api/users', userRoutes);
 
 app.listen(config.port, () => {
   console.log(`Server is running on http://localhost:${config.port}`);
