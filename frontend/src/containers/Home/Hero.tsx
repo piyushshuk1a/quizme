@@ -1,13 +1,15 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { AdminPanelSettings, School } from '@mui/icons-material';
-import { Box, Typography } from '@mui/material';
+import { Box, Link, Typography } from '@mui/material';
 
 import { Button, Container } from '@/components';
-import { USER_ROLES } from '@/constants';
+import { ROUTES, USER_ROLES } from '@/constants';
+import { useUserInfo } from '@/hooks';
 import { pxToRem } from '@/utils';
 
 export const HeroSection = () => {
   const { loginWithRedirect, isAuthenticated } = useAuth0();
+  const { role } = useUserInfo();
 
   return (
     <Box
@@ -54,6 +56,7 @@ export const HeroSection = () => {
         {!isAuthenticated && (
           <Box display="flex" gap={40} marginTop={12}>
             <Button
+              size="large"
               color="gradient"
               startIcon={<AdminPanelSettings />}
               onClick={() =>
@@ -66,6 +69,7 @@ export const HeroSection = () => {
               Start as Admin
             </Button>
             <Button
+              size="large"
               color="secondary"
               startIcon={<School />}
               onClick={() =>
@@ -80,32 +84,15 @@ export const HeroSection = () => {
           </Box>
         )}
         {isAuthenticated && (
-          <Box display="flex" gap={40} marginTop={12}>
+          <Link to={ROUTES.createQuiz}>
             <Button
+              size="large"
               color="gradient"
               startIcon={<AdminPanelSettings />}
-              onClick={() =>
-                loginWithRedirect({
-                  authorizationParams: { screen_hint: 'signup' },
-                  appState: { role: USER_ROLES.admin },
-                })
-              }
             >
-              Create a Quiz
+              {role === USER_ROLES.admin ? 'Create a Quiz' : 'Take a Quiz'}
             </Button>
-            <Button
-              color="secondary"
-              startIcon={<School />}
-              onClick={() =>
-                loginWithRedirect({
-                  authorizationParams: { screen_hint: 'signup' },
-                  appState: { role: USER_ROLES.candidate },
-                })
-              }
-            >
-              Take a Quiz
-            </Button>
-          </Box>
+          </Link>
         )}
       </Container>
     </Box>
