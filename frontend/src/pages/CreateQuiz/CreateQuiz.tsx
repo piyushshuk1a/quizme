@@ -2,7 +2,7 @@ import { Stack, Tab, Tabs } from '@mui/material';
 import { useState, type PropsWithChildren } from 'react';
 
 import { Container } from '@/components';
-import { Header, QuestionPanel } from '@/containers';
+import { Header, QuestionPanel, QuizInfo } from '@/containers';
 
 const TabPanel = ({
   index,
@@ -32,7 +32,10 @@ export const CreateQuiz = () => {
           <Tab label="AI Generation" />
         </Tabs>
         <TabPanel active={activeTab} index={0}>
-          <QuestionPanel />
+          <Stack gap={24}>
+            <QuizInfo />
+            <QuestionPanel />
+          </Stack>
         </TabPanel>
         <TabPanel active={activeTab} index={1}>
           <h3>Tab Panel</h3>
