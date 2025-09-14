@@ -7,9 +7,9 @@ import {
   Typography,
 } from '@mui/material';
 
-export const QuizInfo = () => {
-  const categoryOptions = ['Technology', 'Art', 'Science'];
+import { QUIZ_CATEGORIES } from './QuizInfo.config';
 
+export const QuizInfo = () => {
   return (
     <Card
       variant="outlined"
@@ -22,7 +22,7 @@ export const QuizInfo = () => {
             <TextField required fullWidth label="Quiz Title" />
             <Autocomplete
               sx={{ width: '100%' }}
-              options={categoryOptions}
+              options={QUIZ_CATEGORIES}
               renderInput={(params) => (
                 <TextField required {...params} label="Category" />
               )}

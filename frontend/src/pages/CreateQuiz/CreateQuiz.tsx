@@ -34,7 +34,7 @@ export const CreateQuiz = () => {
         <TabPanel active={activeTab} index={0}>
           <Stack gap={24}>
             <QuizInfo />
-            <QuestionPanel />
+            <QuestionPanel order={0} />
           </Stack>
         </TabPanel>
         <TabPanel active={activeTab} index={1}>

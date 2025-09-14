@@ -13,6 +13,7 @@ import {
   Select,
   Stack,
   TextField,
+  Typography,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
@@ -23,9 +24,9 @@ import { pxToRem } from '@/utils';
 
 import { QUESTION_TYPES } from './QuestionPanel.config';
 
-import type { QuestionType } from './QuestionPanel.types';
+import type { QuestionPanelProps, QuestionType } from './QuestionPanel.types';
 
-export const QuestionPanel = () => {
+export const QuestionPanel = ({ order }: QuestionPanelProps) => {
   const [questionType, setQuestionType] = useState<string>(
     QUESTION_TYPES.singleSelect,
   );
@@ -39,7 +40,6 @@ export const QuestionPanel = () => {
 
   const handleOptionLabelChange = (id: string, newLabel: string) => {
     const option = options.find(({ id: optionId }) => id === optionId);
-    console.log(option, newLabel);
 
     if (option?.checked && !newLabel?.trim()) {
       enqueueSnackbar('Unselect before clearing the option', {
@@ -102,6 +102,9 @@ export const QuestionPanel = () => {
       sx={{ width: '100%', p: 20, borderRadius: 2, background: '#1F2937' }}
     >
       <Stack alignItems="flex-start">
+        <Typography variant="h6" mb={24}>
+          Question {order + 1}
+        </Typography>
         <TextField
           label="Question Text"
           placeholder="Enter your question here"
@@ -210,7 +213,7 @@ export const QuestionPanel = () => {
           width="100%"
           mt={20}
           pt={20}
-          borderTop="1px solid grey"
+          borderTop="1px solid #35363a"
           justifyContent="space-between"
           alignItems="center"
         >
