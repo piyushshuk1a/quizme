@@ -17,155 +17,118 @@ import {
   Typography,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components';
+import { type OptionType, useQuizContext } from '@/context';
 import { RED } from '@/theme';
 import { pxToRem } from '@/utils';
 
-import { FORM_ERRORS, QUESTION_TYPES } from './QuestionPanel.config';
+import { QUESTION_TYPES } from './QuestionPanel.config';
 import { QuestionPreview } from './QuestionPreview';
 
-import type {
-  OptionType,
-  QuestionPanelProps,
-  QuestionType,
-} from './QuestionPanel.types';
+import type { QuestionPanelProps, QuestionType } from './QuestionPanel.types';
 
 export const QuestionPanel = ({ order }: QuestionPanelProps) => {
-  const [questionType, setQuestionType] = useState<string>(
-    QUESTION_TYPES.singleSelect,
-  );
-  const [options, setOptions] = useState<OptionType[]>([
-    { id: '1', label: '', checked: false },
-    { id: '2', label: '', checked: false },
-  ]);
-  const [points, setPoints] = useState<string>('1');
-  const [questionText, setQuestionText] = useState<string>('');
-  const [validationErrors, setValidationErrors] = useState<{
-    questionText?: string;
-    options?: string;
-    answer?: string;
-    points?: string;
-  }>({});
-  const [hasError, setHasError] = useState(false);
+  const {
+    questions,
+    updateQuestion,
+    validateQuestion,
+    getQuesValidationErrors,
+  } = useQuizContext();
+  const question = questions[order];
+  const validationErrors = question.errors ?? {};
   const { enqueueSnackbar } = useSnackbar();
   const [showPreview, setShowPreview] = useState(false);
+  const isFirstRender = useRef<boolean>(true);
 
   const handleOptionLabelChange = (id: string, newLabel: string) => {
-    const option = options.find(({ id: optionId }) => id === optionId);
-
-    if (option?.checked && !newLabel?.trim()) {
-      enqueueSnackbar('Unselect before clearing the option', {
-        variant: 'error',
-      });
-      return;
-    }
-
-    setOptions((prevOptions) => [
-      ...prevOptions.map((option) =>
-        option.id === id ? { ...option, label: newLabel } : option,
-      ),
-    ]);
-  };
-
-  const handleMultiSelectAnsChange = (id: string, checked: boolean) => {
-    const option = options.find(({ id: optionId }) => id === optionId);
-
-    if (!option?.label?.trim()) {
-      enqueueSnackbar('Please update the answer first', {
-        variant: 'error',
-      });
-      return;
-    }
-
-    setOptions((prev) => {
-      const newState = prev.map((option) => {
-        const isChecked = id === option.id ? checked : option.checked;
-        return { ...option, checked: isChecked };
-      });
-      return [...newState];
-    });
+    const updatedOptions = question.options.map((option) =>
+      option.id === id ? { ...option, label: newLabel } : option,
+    );
+    updateQuestion(order, { ...question, options: updatedOptions });
   };
 
   const handleAddOption = () => {
-    const newOption = {
+    const newOption: OptionType = {
       id: Date.now().toString(),
-      label: ``,
+      label: '',
       checked: false,
     };
-    setOptions((prevOptions) => [...prevOptions, newOption]);
+
+    updateQuestion(order, {
+      ...question,
+      options: [...question.options, newOption],
+    });
   };
 
   const handleDeleteOption = (id: string) => {
-    setOptions((prevOptions) =>
-      prevOptions.filter((option) => option.id !== id),
+    const updatedOptions = question.options.filter(
+      (option) => option.id !== id,
     );
+    updateQuestion(order, { ...question, options: updatedOptions });
+  };
+
+  const handleMultiSelectAnsChange = (id: string, checked: boolean) => {
+    const options = question?.options?.map((option) => {
+      const isChecked = id === option.id ? checked : option.checked;
+      return { ...option, checked: isChecked };
+    });
+    updateQuestion(order, { ...question, options });
   };
 
   const handleQuestionTypeChange = (type: QuestionType) => {
-    setOptions((prev) => [
-      ...prev.map((option) => ({ ...option, checked: false })),
-    ]);
-    setQuestionType(type);
+    const updatedOptions = question.options.map((option) => ({
+      ...option,
+      checked: false,
+    }));
+    updateQuestion(order, {
+      ...question,
+      questionType: type,
+      options: updatedOptions,
+    });
   };
 
-  const validateFields = useCallback(() => {
-    const errors: typeof validationErrors = {};
+  const handlePointsChange = (points: string) => {
+    if (!points?.trim() || !isNaN(parseInt(points)))
+      updateQuestion(order, { ...question, points });
+  };
 
-    // Validate question text
-    if (!questionText.trim()) {
-      errors.questionText = FORM_ERRORS.questionTextRequired;
-    }
+  const handleQuestionTextChange = (text: string) => {
+    updateQuestion(order, { ...question, questionText: text });
+  };
 
-    // Validate options
-    if (options.length < 2) {
-      errors.options = FORM_ERRORS.twoOptionRequired;
-    } else if (options.some((option) => !option.label.trim())) {
-      errors.options = FORM_ERRORS.optionLabelRequired;
-    }
-
-    // Validate answer selection
-    if (!options.some((option) => option.checked)) {
-      errors.answer = FORM_ERRORS.answerRequired;
-    }
-
-    // Validate points
-    const pointsValue = parseInt(points);
-    if (!points || isNaN(pointsValue) || pointsValue <= 0) {
-      errors.points = FORM_ERRORS.pointsRequired;
-    }
-
-    setValidationErrors(errors);
-
-    const isValid = Object.keys(errors).length === 0;
-
-    return isValid;
-  }, [setValidationErrors, points, options, questionText]);
-
-  // Validate on every change if errors has been reported
   useEffect(() => {
-    if (hasError) validateFields();
-  }, [hasError, questionText, options, points, validateFields]);
+    const errors = getQuesValidationErrors(question);
+
+    if (Object.keys(errors).length === 0 && isFirstRender.current) {
+      setShowPreview(true);
+    }
+
+    isFirstRender.current = false;
+  }, [question, order, getQuesValidationErrors]);
 
   const handleConfirm = () => {
-    if (validateFields()) {
+    if (validateQuestion(order)) {
       setShowPreview(true);
     } else {
-      setHasError(true);
       enqueueSnackbar('Please fix the errors before confirming.', {
         variant: 'error',
       });
     }
   };
 
+  if (!question) {
+    return null; // If the question doesn't exist, return null
+  }
+
   if (showPreview) {
     return (
       <QuestionPreview
-        options={options}
-        questionText={questionText}
-        questionType={questionType}
-        points={points}
+        options={question.options}
+        questionText={question.questionText}
+        questionType={question.questionType}
+        points={question.points}
         order={order}
         onEdit={() => setShowPreview(false)}
       />
@@ -188,15 +151,15 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
           fullWidth
           sx={{ mb: 24 }}
           rows={4}
-          value={questionText}
-          onChange={(e) => setQuestionText(e.target.value)}
+          value={question.questionText}
+          onChange={(e) => handleQuestionTextChange(e.target.value)}
           error={!!validationErrors.questionText}
           helperText={validationErrors.questionText}
         />
         <FormControl fullWidth sx={{ mb: 24 }}>
           <InputLabel>Question Type</InputLabel>
           <Select
-            value={questionType}
+            value={question.questionType}
             onChange={(e) => handleQuestionTypeChange(e.target.value)}
             label="Question Type"
           >
@@ -207,17 +170,16 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
           </Select>
         </FormControl>
 
-        {questionType === QUESTION_TYPES.singleSelect && (
+        {question.questionType === QUESTION_TYPES.singleSelect && (
           <RadioGroup
             sx={{ width: '100%' }}
             onChange={(event) => {
               const selectedId = event.target.value;
-              setOptions((prevOptions) =>
-                prevOptions.map((option) => ({
-                  ...option,
-                  checked: option.id === selectedId,
-                })),
-              );
+              const updatedOptions = question.options.map((option) => ({
+                ...option,
+                checked: option.id === selectedId,
+              }));
+              updateQuestion(order, { ...question, options: updatedOptions });
             }}
           >
             <Box display="flex" gap={10}>
@@ -228,7 +190,7 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
                 </FormHelperText>
               )}
             </Box>
-            {options.map((option) => (
+            {question.options.map((option) => (
               <Box key={option.id} display="flex" alignItems="center" mb={8}>
                 <FormControlLabel
                   slotProps={{ typography: { sx: { width: '100%' } } }}
@@ -258,7 +220,7 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
           </RadioGroup>
         )}
 
-        {questionType === QUESTION_TYPES.multiSelect && (
+        {question.questionType === QUESTION_TYPES.multiSelect && (
           <Stack gap={2} width="100%">
             <Box display="flex" gap={10}>
               <InputLabel sx={{ mb: 12 }}>Answer Options</InputLabel>
@@ -268,7 +230,7 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
                 </FormHelperText>
               )}
             </Box>
-            {options.map((option) => (
+            {question.options.map((option) => (
               <Box key={option.id} display="flex" alignItems="center" mb={8}>
                 <Checkbox
                   sx={{ p: 0, mr: 8 }}
@@ -318,14 +280,8 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
         >
           <TextField
             label="Points"
-            value={points.toString()}
-            onChange={(e) => {
-              const updatedValue = parseInt(e.target.value);
-
-              if (!updatedValue || !isNaN(updatedValue)) {
-                setPoints(isNaN(updatedValue) ? '' : updatedValue.toString());
-              }
-            }}
+            value={question.points.toString()}
+            onChange={(e) => handlePointsChange(e.target.value)}
             error={!!validationErrors.points}
             helperText={validationErrors.points}
           />
