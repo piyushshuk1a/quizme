@@ -1,5 +1,6 @@
-import { Add, DeleteOutline } from '@mui/icons-material';
+import { Add, Delete, DeleteOutline } from '@mui/icons-material';
 import {
+  alpha,
   Box,
   Card,
   Checkbox,
@@ -20,7 +21,11 @@ import { useSnackbar } from 'notistack';
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components';
-import { type OptionType, useQuizContext } from '@/context';
+import {
+  type OptionType,
+  type QuestionConfig,
+  useQuizContext,
+} from '@/context';
 import { RED } from '@/theme';
 import { pxToRem } from '@/utils';
 
@@ -29,14 +34,15 @@ import { QuestionPreview } from './QuestionPreview';
 
 import type { QuestionPanelProps, QuestionType } from './QuestionPanel.types';
 
-export const QuestionPanel = ({ order }: QuestionPanelProps) => {
+export const QuestionPanel = ({ order, index }: QuestionPanelProps) => {
   const {
     questions,
     updateQuestion,
     validateQuestion,
     getQuesValidationErrors,
+    deleteQuestion,
   } = useQuizContext();
-  const question = questions[order];
+  const question = questions.find((q) => q.order === order) as QuestionConfig;
   const validationErrors = question.errors ?? {};
   const { enqueueSnackbar } = useSnackbar();
   const [showPreview, setShowPreview] = useState(false);
@@ -130,6 +136,7 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
         questionType={question.questionType}
         points={question.points}
         order={order}
+        index={index}
         onEdit={() => setShowPreview(false)}
       />
     );
@@ -141,9 +148,25 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
       sx={{ width: '100%', p: 20, borderRadius: 2, background: '#1F2937' }}
     >
       <Stack alignItems="flex-start">
-        <Typography variant="h6" mb={24}>
-          Question {order + 1}
-        </Typography>
+        <Box
+          width="100%"
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={24}
+        >
+          <Typography variant="h6">Question {index + 1}</Typography>
+          {questions.length > 1 && (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<Delete />}
+              onClick={() => deleteQuestion(order)}
+            >
+              Delete
+            </Button>
+          )}
+        </Box>
         <TextField
           label="Question Text"
           placeholder="Enter your question here"
@@ -191,7 +214,13 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
               )}
             </Box>
             {question.options.map((option) => (
-              <Box key={option.id} display="flex" alignItems="center" mb={8}>
+              <Box
+                key={option.id}
+                display="flex"
+                alignItems="center"
+                mb={11}
+                gap={18}
+              >
                 <FormControlLabel
                   slotProps={{ typography: { sx: { width: '100%' } } }}
                   sx={{ width: '100%', marginRight: 0 }}
@@ -210,7 +239,16 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
                     />
                   }
                 />
-                <IconButton onClick={() => handleDeleteOption(option.id)}>
+                <IconButton
+                  sx={{
+                    bgcolor: alpha('#B83030', 0.25),
+                    '&:hover': {
+                      svg: { color: alpha('#fff', 0.5) },
+                      bgcolor: alpha('#B83030', 0.5),
+                    },
+                  }}
+                  onClick={() => handleDeleteOption(option.id)}
+                >
                   <DeleteOutline
                     sx={{ fontSize: pxToRem(20), color: RED[500] }}
                   />
@@ -231,26 +269,43 @@ export const QuestionPanel = ({ order }: QuestionPanelProps) => {
               )}
             </Box>
             {question.options.map((option) => (
-              <Box key={option.id} display="flex" alignItems="center" mb={8}>
-                <Checkbox
-                  sx={{ p: 0, mr: 8 }}
-                  checked={option.checked}
-                  onChange={(_e, checked) =>
-                    handleMultiSelectAnsChange(option.id, checked)
-                  }
-                />
-                <TextField
-                  error={
-                    validationErrors.options ? !option.label?.trim() : false
-                  }
-                  fullWidth
-                  placeholder="Enter the option value"
-                  value={option.label}
-                  onChange={(e) =>
-                    handleOptionLabelChange(option.id, e.target.value)
-                  }
-                />
-                <IconButton onClick={() => handleDeleteOption(option.id)}>
+              <Box
+                key={option.id}
+                display="flex"
+                alignItems="center"
+                mb={8}
+                gap={16}
+              >
+                <Box display="flex" width="100%">
+                  <Checkbox
+                    sx={{ p: 0, mr: 8 }}
+                    checked={option.checked}
+                    onChange={(_e, checked) =>
+                      handleMultiSelectAnsChange(option.id, checked)
+                    }
+                  />
+                  <TextField
+                    error={
+                      validationErrors.options ? !option.label?.trim() : false
+                    }
+                    fullWidth
+                    placeholder="Enter the option value"
+                    value={option.label}
+                    onChange={(e) =>
+                      handleOptionLabelChange(option.id, e.target.value)
+                    }
+                  />
+                </Box>
+                <IconButton
+                  sx={{
+                    bgcolor: alpha('#B83030', 0.25),
+                    '&:hover': {
+                      svg: { color: alpha('#fff', 0.5) },
+                      bgcolor: alpha('#B83030', 0.5),
+                    },
+                  }}
+                  onClick={() => handleDeleteOption(option.id)}
+                >
                   <DeleteOutline
                     sx={{ fontSize: pxToRem(20), color: RED[500] }}
                   />

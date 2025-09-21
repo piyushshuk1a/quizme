@@ -6,6 +6,7 @@ export type QuestionType = ObjectValuesUnion<typeof QUESTION_TYPES>;
 
 export type QuestionPanelProps = {
   order: number;
+  index: number;
 };
 
 export type QuestionPreviewProps = {
@@ -15,4 +16,5 @@ export type QuestionPreviewProps = {
   questionType: string;
   order: number;
   onEdit?: () => void;
+  index: number;
 };

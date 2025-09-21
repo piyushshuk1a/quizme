@@ -54,10 +54,20 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
     return validationErrors;
   };
 
+  const deleteQuestion = (order: number) => {
+    console.log('to be deleted: order is', order);
+    setQuestions((prev) => {
+      const newState = prev.filter((q) => q.order !== order);
+
+      return [...newState];
+    });
+  };
+
   const updateQuestion = (order: number, updatedQuestion: QuestionConfig) => {
     setQuestions((prev) => {
-      const updatedQuestions = [...prev];
-      updatedQuestions[order] = updatedQuestion;
+      const updatedQuestions = [
+        ...prev.map((q) => (q.order === order ? updatedQuestion : q)),
+      ];
 
       // Revalidate if errors are there
       const errors =
@@ -71,7 +81,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const validateQuestion = (order: number): boolean => {
-    const question = questions[order];
+    const question = questions.find((q) => q.order === order) as QuestionConfig;
     const validationErrors = getQuesValidationErrors(question);
 
     // Update the question with errors
@@ -132,6 +142,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
         updateQuizInfo,
         validateQuizInfo,
         getQuizInfoValidationErrors,
+        deleteQuestion,
       }}
     >
       {children}

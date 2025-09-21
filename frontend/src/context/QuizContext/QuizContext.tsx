@@ -46,6 +46,7 @@ type QuizContextType = {
   getQuesValidationErrors: (
     question: QuestionConfig,
   ) => NonNullable<QuestionConfig['errors']>;
+  deleteQuestion: (order: number) => void;
 };
 
 export const QuizContext = createContext<QuizContextType | undefined>(

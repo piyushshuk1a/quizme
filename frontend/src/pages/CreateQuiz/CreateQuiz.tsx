@@ -1,7 +1,14 @@
-import { Stack, Tab, Tabs } from '@mui/material';
-import { useEffect, useRef, useState, type PropsWithChildren } from 'react';
+import { AddCircle } from '@mui/icons-material';
+import { Box, Stack, Tab, Tabs } from '@mui/material';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PropsWithChildren,
+} from 'react';
 
-import { Container } from '@/components';
+import { Button, Container } from '@/components';
 import { Header, QuestionPanel, QuizInfo } from '@/containers';
 import { QUESTION_TYPES } from '@/containers/CreateQuiz/QuestionPanel/QuestionPanel.config';
 import { QuizProvider, useQuizContext } from '@/context';
@@ -22,13 +29,13 @@ const CreateQuiz = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
   const { questions, addQuestion } = useQuizContext();
   const isQuestionAdded = useRef<boolean>(false);
+  const maxOrder = useRef<number>(0);
+  console.log('questions', questions);
 
-  useEffect(() => {
-    if (questions.length === 0 && !isQuestionAdded.current) {
-      isQuestionAdded.current = true;
-
+  const addNewQuestion = useCallback(
+    (order: number) => {
       addQuestion({
-        order: 0,
+        order,
         options: [
           { id: '1', label: '', checked: false },
           { id: '2', label: '', checked: false },
@@ -37,8 +44,20 @@ const CreateQuiz = () => {
         questionText: '',
         questionType: QUESTION_TYPES.singleSelect,
       });
+
+      // Keep track of the maximum value to ensure unique order
+      maxOrder.current++;
+    },
+    [addQuestion],
+  );
+
+  useEffect(() => {
+    if (questions.length === 0 && !isQuestionAdded.current) {
+      isQuestionAdded.current = true;
+
+      addNewQuestion(maxOrder.current);
     }
-  }, [questions, addQuestion]);
+  }, [questions, addNewQuestion]);
 
   return (
     <Stack gap={12} style={{ padding: 24 }} alignItems="center">
@@ -55,9 +74,18 @@ const CreateQuiz = () => {
         <TabPanel active={activeTab} index={0}>
           <Stack gap={24}>
             <QuizInfo />
-            {questions.map((_q, index) => (
-              <QuestionPanel key={index} order={index} />
+            {questions.map((q, index) => (
+              <QuestionPanel key={q.order} order={q.order} index={index} />
             ))}
+            <Box display="flex" justifyContent="flex-end">
+              <Button
+                color="gradient"
+                startIcon={<AddCircle />}
+                onClick={() => addNewQuestion(maxOrder.current)}
+              >
+                Add New Question
+              </Button>
+            </Box>
           </Stack>
         </TabPanel>
         <TabPanel active={activeTab} index={1}>
