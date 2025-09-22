@@ -4,7 +4,9 @@ import Joi from 'joi';
 const envSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
   PORT: Joi.number().default(8000),
-  DATABASE_URL: Joi.string().uri().required(),
+  FIRESTORE_PRIVATE_KEY: Joi.string().required(),
+  FIRESTORE_CLIENT_EMAIL: Joi.string().email().required(),
+  FIRESTORE_PROJECT_ID: Joi.string().required(),
   JWT_SECRET: Joi.string().required(),
   LOG_LEVEL: Joi.string()
     .valid('info', 'warn', 'error', 'debug')
@@ -27,7 +29,12 @@ if (error) {
 export const config = {
   nodeEnv: envVars.NODE_ENV as 'development' | 'production' | 'test',
   port: envVars.PORT as number,
-  databaseUrl: envVars.DATABASE_URL as string,
+  firestorePrivateKey: (envVars.FIRESTORE_PRIVATE_KEY as string).replace(
+    /\\n/g,
+    '\n',
+  ),
+  firestoreClientEmail: envVars.FIRESTORE_CLIENT_EMAIL as string,
+  firestoreProjectId: envVars.FIRESTORE_PROJECT_ID as string,
   jwtSecret: envVars.JWT_SECRET as string,
   logLevel: envVars.LOG_LEVEL as 'info' | 'warn' | 'error' | 'debug',
   auth0Domain: envVars.AUTH0_DOMAIN as string,

@@ -55,7 +55,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteQuestion = (order: number) => {
-    console.log('to be deleted: order is', order);
     setQuestions((prev) => {
       const newState = prev.filter((q) => q.order !== order);
 
