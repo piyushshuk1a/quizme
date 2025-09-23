@@ -18,3 +18,6 @@ dist
 !.env.example
 *storybook.log
 storybook-static
+
+# Firestore service account file
+*firebase*.json
