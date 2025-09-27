@@ -1,8 +1,16 @@
+export type Complexity = 'Easy' | 'Medium' | 'Hard' | 'Advanced';
+export type QuestionType = 'single-select' | 'multi-select';
+
+export interface Option {
+  id: string;
+  label: string;
+}
+
 export interface Quiz {
   quizId?: string; // Firestore document ID
   title: string;
   description: string;
-  complexity: 'Easy' | 'Medium' | 'Hard' | 'Advanced';
+  complexity: Complexity;
   category: string;
   isPublic: boolean;
   totalPoints: number;
@@ -13,10 +21,10 @@ export interface Quiz {
 export interface Question {
   questionId?: string; // Firestore document ID
   questionText: string;
-  questionType: 'single-select' | 'multi-select';
+  questionType: QuestionType;
   points: number;
   order: number;
-  options: { id: string; label: string }[];
+  options: Option[];
   correctOptions: string[];
 }
 
