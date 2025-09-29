@@ -1,8 +1,9 @@
 import { FIRESTORE_COLLECTIONS } from '@/config';
 import { db } from '@/firebase';
-import { User } from '@/models';
+import { QuizAttempt, User } from '@/models';
 
 const USERS_COLLECTION = FIRESTORE_COLLECTIONS.users;
+const QUIZZES_ATTEMPTED_SUBCOLLECTION = FIRESTORE_COLLECTIONS.quizzesAttempted;
 
 export const createUser = async (userData: User): Promise<User> => {
   try {
@@ -28,5 +29,23 @@ export const getUserById = async (userId: string): Promise<User | null> => {
   } catch (error) {
     console.error('Error querying a user:', error);
     throw new Error('Could not query the user');
+  }
+};
+
+export const recordQuizAttempt = async (
+  userId: string,
+  attemptData: QuizAttempt,
+): Promise<void> => {
+  try {
+    const userDocRef = db.collection(USERS_COLLECTION).doc(userId);
+    const quizAttemptsCollectionRef = userDocRef.collection(
+      QUIZZES_ATTEMPTED_SUBCOLLECTION,
+    );
+
+    // Add a new document for this attempt
+    await quizAttemptsCollectionRef.add(attemptData);
+  } catch (error) {
+    console.error('Error recording quiz attempt:', error);
+    throw new Error('Could not record quiz attempt.');
   }
 };
