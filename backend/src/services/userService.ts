@@ -49,3 +49,29 @@ export const recordQuizAttempt = async (
     throw new Error('Could not record quiz attempt.');
   }
 };
+
+export const getUserQuizAttempts = async (
+  userId: string,
+): Promise<QuizAttempt[]> => {
+  try {
+    const userDocRef = db.collection(USERS_COLLECTION).doc(userId);
+    const userDoc = await userDocRef.get();
+
+    if (!userDoc.exists) {
+      return [];
+    }
+
+    const attemptsSnapshot = await userDocRef
+      .collection(QUIZZES_ATTEMPTED_SUBCOLLECTION)
+      .get();
+    const attempts: QuizAttempt[] = [];
+    attemptsSnapshot.forEach((doc) => {
+      attempts.push(doc.data() as QuizAttempt);
+    });
+
+    return attempts;
+  } catch (error) {
+    console.error('Error fetching user and attempts:', error);
+    throw new Error('Could not fetch user data.');
+  }
+};
