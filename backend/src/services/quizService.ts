@@ -1,6 +1,6 @@
 import { FIRESTORE_COLLECTIONS } from '@/config';
 import { db } from '@/firebase';
-import { Question, Quiz } from '@/models';
+import { Invited, Question, Quiz } from '@/models';
 
 export const createQuiz = async (
   quizData: Quiz,
@@ -61,5 +61,73 @@ export const getAllPublicQuizzes = async (): Promise<Quiz[]> => {
   } catch (error) {
     console.error('Error fetching public quizzes:', error);
     throw new Error('Could not fetch quizzes.');
+  }
+};
+
+export const inviteCandidates = async (
+  quizId: string,
+  candidates: Omit<Invited, 'obtainedPoints' | 'status'>[],
+): Promise<void> => {
+  try {
+    const batch = db.batch();
+    const invitedCollectionRef = db
+      .collection(FIRESTORE_COLLECTIONS.quizzes)
+      .doc(quizId)
+      .collection(FIRESTORE_COLLECTIONS.invited);
+
+    for (const candidate of candidates) {
+      const candidateDocRef = invitedCollectionRef.doc();
+      batch.set(candidateDocRef, {
+        ...candidate,
+        obtainedPoints: 0,
+        status: 'invite_sent',
+      });
+    }
+
+    await batch.commit();
+  } catch (error) {
+    console.error('Error inviting candidates:', error);
+    throw new Error('Could not invite candidates.');
+  }
+};
+
+export const updateInvitedCandidate = async (
+  quizId: string,
+  userId: string,
+  updateData: Partial<Invited>,
+): Promise<void> => {
+  try {
+    const invitedDocRef = db
+      .collection(FIRESTORE_COLLECTIONS.quizzes)
+      .doc(quizId)
+      .collection(FIRESTORE_COLLECTIONS.invited)
+      .doc(userId);
+
+    await invitedDocRef.update(updateData);
+  } catch (error) {
+    console.error('Error updating invited candidate:', error);
+    throw new Error('Could not update invited candidate.');
+  }
+};
+
+export const listInvitedCandidates = async (
+  quizId: string,
+): Promise<Invited[]> => {
+  try {
+    const invitedCollectionRef = db
+      .collection(FIRESTORE_COLLECTIONS.quizzes)
+      .doc(quizId)
+      .collection(FIRESTORE_COLLECTIONS.invited);
+    const invitedSnapshot = await invitedCollectionRef.get();
+
+    const invitedCandidates: Invited[] = [];
+    invitedSnapshot.forEach((doc) => {
+      invitedCandidates.push(doc.data() as Invited);
+    });
+
+    return invitedCandidates;
+  } catch (error) {
+    console.error('Error listing invited candidates:', error);
+    throw new Error('Could not list invited candidates.');
   }
 };

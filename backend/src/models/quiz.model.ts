@@ -30,6 +30,7 @@ export interface Question {
 }
 
 export interface Invited {
-  userId: string;
+  userEmail: string;
   obtainedPoints: number;
+  status: 'attempted' | 'invite_sent';
 }
