@@ -18,7 +18,7 @@ export const API_REQUEST_TYPES = {
 } as const;
 
 export const API_ENDPOINTS = {
-  userRole: '/api/users/:id/role',
+  userRole: '/api/users/:id',
 } as const;
 
 export const ROLE_NAMESPACE = 'https://myapp.com/role';

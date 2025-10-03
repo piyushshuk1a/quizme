@@ -27,7 +27,7 @@ import { NAVY_BLUE } from '@/theme';
 import { useMutation } from './swr';
 import { useSignupRole, type UserRoles } from './useSignupRole';
 
-type UpdateRolePayload = { role: UserRoles };
+type UpdateRolePayload = { role: UserRoles; email: string };
 
 export const useRoleSync = () => {
   const { isAuthenticated, user, getAccessTokenWithPopup } = useAuth0();
@@ -51,9 +51,9 @@ export const useRoleSync = () => {
 
   const handleUpdateRole = useCallback(
     (role: UserRoles) => {
-      return updateRole({ role });
+      return updateRole({ role, email: user?.email as string });
     },
-    [updateRole],
+    [updateRole, user],
   );
 
   const syncUser = useCallback(async () => {

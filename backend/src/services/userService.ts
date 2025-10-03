@@ -2,12 +2,12 @@ import { FIRESTORE_COLLECTIONS } from '@/config';
 import { db } from '@/firebase';
 import { QuizAttempt, User } from '@/models';
 
-const USERS_COLLECTION = FIRESTORE_COLLECTIONS.users;
-const QUIZZES_ATTEMPTED_SUBCOLLECTION = FIRESTORE_COLLECTIONS.quizzesAttempted;
-
 export const createUser = async (userData: User): Promise<User> => {
   try {
-    const userDocRef = db.collection(USERS_COLLECTION).doc(userData.userId);
+    const userDocRef = db
+      .collection(FIRESTORE_COLLECTIONS.users)
+      .doc(userData.userId);
+
     await userDocRef.set(userData);
     return userData;
   } catch (error) {
@@ -16,9 +16,14 @@ export const createUser = async (userData: User): Promise<User> => {
   }
 };
 
+export const updateUser = async (userId: string, userData: Partial<User>) => {
+  const userDocRef = db.collection(FIRESTORE_COLLECTIONS.users).doc(userId);
+  await userDocRef.set(userData, { merge: true });
+};
+
 export const getUserById = async (userId: string): Promise<User | null> => {
   try {
-    const userDocRef = db.collection(USERS_COLLECTION).doc(userId);
+    const userDocRef = db.collection(FIRESTORE_COLLECTIONS.users).doc(userId);
     const userDoc = await userDocRef.get();
 
     if (!userDoc.exists) {
@@ -37,9 +42,9 @@ export const recordQuizAttempt = async (
   attemptData: QuizAttempt,
 ): Promise<void> => {
   try {
-    const userDocRef = db.collection(USERS_COLLECTION).doc(userId);
+    const userDocRef = db.collection(FIRESTORE_COLLECTIONS.users).doc(userId);
     const quizAttemptsCollectionRef = userDocRef.collection(
-      QUIZZES_ATTEMPTED_SUBCOLLECTION,
+      FIRESTORE_COLLECTIONS.quizzesAttempted,
     );
 
     // Add a new document for this attempt
@@ -54,7 +59,7 @@ export const getUserQuizAttempts = async (
   userId: string,
 ): Promise<QuizAttempt[]> => {
   try {
-    const userDocRef = db.collection(USERS_COLLECTION).doc(userId);
+    const userDocRef = db.collection(FIRESTORE_COLLECTIONS.users).doc(userId);
     const userDoc = await userDocRef.get();
 
     if (!userDoc.exists) {
@@ -62,7 +67,7 @@ export const getUserQuizAttempts = async (
     }
 
     const attemptsSnapshot = await userDocRef
-      .collection(QUIZZES_ATTEMPTED_SUBCOLLECTION)
+      .collection(FIRESTORE_COLLECTIONS.quizzesAttempted)
       .get();
     const attempts: QuizAttempt[] = [];
     attemptsSnapshot.forEach((doc) => {

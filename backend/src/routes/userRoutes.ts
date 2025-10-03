@@ -5,6 +5,6 @@ import { checkJwt } from '@/middlewares';
 
 const router = express.Router();
 
-router.put('/:id/role', checkJwt, updateRole);
+router.put('/:id', checkJwt, updateRole);
 
 export default router;
