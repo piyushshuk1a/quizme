@@ -2,7 +2,12 @@ import { Request, Response } from 'express';
 
 import { config, USER_ERROR_MESSAGES, USER_ROLES } from '@/config';
 import { FieldValue } from '@/firebase';
-import { getInvitedQuizzesForUser, getUserById, updateUser } from '@/services';
+import {
+  getAllUserQuizzes,
+  getInvitedQuizzesForUser,
+  getUserById,
+  updateUser,
+} from '@/services';
 import { getManagementApiToken } from '@/utils';
 
 import { UpdateRoleRequest } from './userController.types';
@@ -75,5 +80,17 @@ export const getInvitedQuizzes = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const getAllQuizzesForUser = async (req: Request, res: Response) => {
+  const userId = req.auth?.sub as string;
+
+  try {
+    const quizzes = await getAllUserQuizzes(userId);
+    return res.status(200).json(quizzes);
+  } catch (error) {
+    console.error('Error fetching user quizzes:', error);
+    return res.status(500).json({ message: 'Could not fetch user quizzes.' });
   }
 };

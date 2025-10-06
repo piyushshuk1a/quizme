@@ -45,6 +45,28 @@ export const getQuizById = async (quizId: string): Promise<Quiz | null> => {
   }
 };
 
+export const getAllUserQuizzes = async (id: string): Promise<Quiz[]> => {
+  try {
+    // Perform the database query
+    const querySnapshot = await db
+      .collection(FIRESTORE_COLLECTIONS.quizzes)
+      .where('publishedBy', '==', id)
+      .get();
+
+    // Map the documents to a clean array of data
+    const quizzes = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as Quiz),
+    }));
+
+    return quizzes;
+  } catch (error) {
+    console.error('Error fetching quizzes:', error);
+    // You might want to throw the error or return a specific error object
+    throw new Error('Could not retrieve quizzes.');
+  }
+};
+
 export const getAllPublicQuizzes = async (): Promise<Quiz[]> => {
   try {
     const quizzesSnapshot = await db
