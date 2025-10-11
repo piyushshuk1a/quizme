@@ -4,8 +4,14 @@ import { type Question } from '@/containers';
 
 import { RenderQuizContext } from './RenderQuizContext';
 
+import type { QuizInfo } from '../QuizContext';
+
 interface RenderQuizProviderProps {
-  quizData: { questions: Question[] };
+  quizData: QuizInfo & {
+    questions: (Omit<Question, 'correctOptions'> & {
+      correctOptions?: string[];
+    })[];
+  };
   children: ReactNode;
 }
 
@@ -33,10 +39,12 @@ export const RenderQuizProvider: React.FC<RenderQuizProviderProps> = ({
     }));
   };
 
+  const { questions, ...quizInfo } = quizData;
   const value = {
-    questions: quizData.questions,
+    questions: questions,
     currentQuestionIndex,
     userAnswers,
+    quizInfo: quizInfo,
     goToNextQuestion,
     goToPreviousQuestion,
     setAnswer,
