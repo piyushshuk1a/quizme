@@ -1,1 +1,1 @@
-export { CreateQuizWithProvider as default } from './CreateQuiz';
+export { TabPanel, CreateQuizWithProvider as default } from './CreateQuiz';

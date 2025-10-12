@@ -13,7 +13,7 @@ import { Header, QuestionPanel, QuizInfo } from '@/containers';
 import { QUESTION_TYPES } from '@/containers/CreateQuiz/QuestionPanel/QuestionPanel.config';
 import { QuizProvider, useQuizContext } from '@/context';
 
-const TabPanel = ({
+export const TabPanel = ({
   index,
   active,
   children,

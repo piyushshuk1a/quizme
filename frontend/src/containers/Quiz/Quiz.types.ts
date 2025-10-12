@@ -6,10 +6,10 @@ export interface QuizData {
   description: string;
   complexity: Complexity;
   category: string;
-  isPublic: boolean;
+  isPublic?: boolean;
   totalPoints: number;
   isPublished?: boolean;
-  publishedBy: string;
+  publishedBy?: string;
   durationMinutes: number;
   totalQuestions: number;
   questions: Array<
