@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+
+import type { QuizDataWithCorrectOptions } from '@/containers';
 
 import { QuizContext, type QuestionConfig, type QuizInfo } from './QuizContext';
 import {
@@ -30,6 +32,33 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
       errors: {},
     });
   };
+
+  const initCreateForm = useCallback((quizData: QuizDataWithCorrectOptions) => {
+    const questionsState: QuestionConfig[] = quizData.questions.map((ques) => {
+      const { correctOptions, options, points, ...rest } = ques;
+      return {
+        ...rest,
+        points: points.toString(),
+        options: options.map(({ label, id }) => ({
+          label,
+          id,
+          checked: correctOptions.includes(id),
+        })),
+        errors: {},
+      };
+    });
+    const quizInfoState: QuizInfo = {
+      id: quizData.id,
+      title: quizData.title,
+      category: quizData.category,
+      complexity: quizData.complexity,
+      description: quizData.description,
+      duration: quizData.durationMinutes.toString(),
+      errors: {},
+    };
+    setQuestions(questionsState);
+    setQuizInfo(quizInfoState);
+  }, []);
 
   const addQuestion = (newQuestion: QuestionConfig) => {
     setQuestions((prev) => [...prev, newQuestion]);
@@ -166,6 +195,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
         getQuizInfoValidationErrors,
         deleteQuestion,
         resetCreateForm,
+        initCreateForm,
       }}
     >
       {children}

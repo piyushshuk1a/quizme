@@ -13,7 +13,7 @@ import { getQuestionsForApi } from './Header.config';
 
 import type { Complexity, CreateQuizPayload } from './Header.types';
 
-export const Header = () => {
+export const Header = ({ isEditing = false }: { isEditing?: boolean }) => {
   const {
     quizInfo,
     questions,
@@ -27,7 +27,14 @@ export const Header = () => {
     useMutation<CreateQuizPayload>({
       path: API_ENDPOINTS.createQuiz,
       onSuccess: () => {
-        enqueueSnackbar('Quiz has been created', { variant: 'success' });
+        if (isEditing)
+          enqueueSnackbar('Quiz updated! Your changes will be live shortly.', {
+            variant: 'success',
+          });
+        else
+          enqueueSnackbar('Your quiz has been created.', {
+            variant: 'success',
+          });
         resetCreateForm();
         navigate(`${ROUTES.listQuiz}?tab=myQuizzes`);
       },
@@ -91,7 +98,7 @@ export const Header = () => {
     >
       <Stack maxWidth={pxToRem(500)}>
         <Typography component="h2" variant="h4">
-          Create New Quiz
+          {isEditing ? 'Edit Quiz' : 'Create New Quiz'}
         </Typography>
         <Typography sx={{ opacity: 0.65 }}>
           Build engaging quizzes manually or use AI to generate questions

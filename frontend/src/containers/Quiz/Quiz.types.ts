@@ -12,7 +12,9 @@ export interface QuizData {
   publishedBy?: string;
   durationMinutes: number;
   totalQuestions: number;
-  questions: Array<
-    Omit<Question, 'correctOptions'> & { correctOptions?: string[] }
-  >;
+  questions: Array<Omit<Question, 'correctOptions'>>;
 }
+
+export type QuizDataWithCorrectOptions = Omit<QuizData, 'questions'> & {
+  questions: Question[];
+};

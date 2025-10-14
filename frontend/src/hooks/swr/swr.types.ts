@@ -3,7 +3,10 @@ import { type SWRMutationConfiguration } from 'swr/mutation';
 
 import { API_REQUEST_TYPES } from '@/constants';
 
-export type GenericParams = Record<string, string | number | undefined | null>;
+export type GenericParams = Record<
+  string,
+  string | number | undefined | null | boolean
+>;
 export type GenericPayload = Record<string, unknown> | object;
 
 /**

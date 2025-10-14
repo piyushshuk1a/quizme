@@ -28,7 +28,7 @@ export const ListQuiz = () => {
   };
 
   return (
-    <Stack width="100%" padding={24} alignItems="center">
+    <Stack width="100%" padding={24} pt={40} alignItems="center">
       <Container sx={{ position: 'relative' }} width="100%">
         {activeTab === 1 && (
           <Button

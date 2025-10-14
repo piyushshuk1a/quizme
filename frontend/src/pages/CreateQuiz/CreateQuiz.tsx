@@ -9,9 +9,18 @@ import {
 } from 'react';
 
 import { Button, Container } from '@/components';
-import { Header, QuestionPanel, QuizInfo } from '@/containers';
+import {
+  Header,
+  QuestionPanel,
+  QuizInfo,
+  type QuizDataWithCorrectOptions,
+} from '@/containers';
 import { QUESTION_TYPES } from '@/containers/CreateQuiz/QuestionPanel/QuestionPanel.config';
 import { QuizProvider, useQuizContext } from '@/context';
+
+export type CreateQuizProps = {
+  quizData?: QuizDataWithCorrectOptions;
+};
 
 export const TabPanel = ({
   index,
@@ -25,11 +34,22 @@ export const TabPanel = ({
   );
 };
 
-const CreateQuiz = () => {
+const CreateQuiz = ({ quizData }: CreateQuizProps) => {
   const [activeTab, setActiveTab] = useState<number>(0);
-  const { questions, addQuestion } = useQuizContext();
+  const { questions, addQuestion, initCreateForm } = useQuizContext();
   const isQuestionAdded = useRef<boolean>(false);
   const maxOrder = useRef<number>(0);
+
+  useEffect(() => {
+    if (quizData) {
+      const maxOrderInData = quizData.questions.reduce(
+        (maxOrder, current) => Math.max(maxOrder, current.order),
+        0,
+      );
+      maxOrder.current = maxOrderInData + 1;
+      initCreateForm(quizData);
+    }
+  }, [quizData, initCreateForm]);
 
   const addNewQuestion = useCallback(
     (order: number) => {
@@ -95,8 +115,8 @@ const CreateQuiz = () => {
   );
 };
 
-export const CreateQuizWithProvider = () => (
+export const CreateQuizWithProvider = ({ quizData }: CreateQuizProps) => (
   <QuizProvider>
-    <CreateQuiz />
+    <CreateQuiz quizData={quizData} />
   </QuizProvider>
 );

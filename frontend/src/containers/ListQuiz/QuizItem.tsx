@@ -1,7 +1,9 @@
 import { AccessTime, Leaderboard, Stars } from '@mui/icons-material';
 import { alpha, Box, Card, Chip, Stack, Typography } from '@mui/material';
+import { generatePath, useNavigate } from 'react-router';
 
 import { Button } from '@/components';
+import { ROUTES } from '@/constants';
 
 import type { QuizItemProps } from './ListQuiz.types';
 
@@ -13,6 +15,7 @@ const COMPLEXITY_CHIP_COLOR_MAP = {
 } as const;
 
 export const QuizItem = ({
+  id = '',
   title,
   durationMinutes,
   totalPoints,
@@ -22,6 +25,8 @@ export const QuizItem = ({
   isPublished,
   isMyQuiz = false,
 }: QuizItemProps) => {
+  const navigate = useNavigate();
+
   return (
     <Card
       variant="outlined"
@@ -69,10 +74,15 @@ export const QuizItem = ({
       </Stack>
       <Chip sx={{ background: '#374151' }} label={category} />
       {isMyQuiz && !isPublished && (
-        <Button variant="outlined">Edit Quiz</Button>
+        <Button
+          variant="outlined"
+          onClick={() => navigate(generatePath(ROUTES.editQuiz, { id }))}
+        >
+          Edit Quiz
+        </Button>
       )}
       {isMyQuiz && isPublished && (
-        <Button variant="outlined">View Details</Button>
+        <Button variant="outlined">Invite Candidate</Button>
       )}
       {!isMyQuiz && <Button variant="outlined">Take Quiz</Button>}
     </Card>

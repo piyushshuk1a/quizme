@@ -45,13 +45,13 @@ export const updateQuizAndQuestions = async (
         throw new Error(`Quiz with ID ${quizId} not found.`);
       }
 
-      // 2. Update the main quiz document.
-      const quizUpdatePayload = { ...updatedQuizData };
-      transaction.update(quizRef, quizUpdatePayload);
-
-      // 3. Handle the sub-collection of questions.
+      // 2. Handle the sub-collection of questions.
       const questionsRef = quizRef.collection(FIRESTORE_COLLECTIONS.questions);
       const existingQuestionsQuery = await transaction.get(questionsRef);
+
+      // 3. Update the main quiz document.
+      const quizUpdatePayload = { ...updatedQuizData };
+      transaction.update(quizRef, quizUpdatePayload);
 
       // Batch delete existing questions
       const batch = db.batch();

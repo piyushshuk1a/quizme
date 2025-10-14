@@ -1,5 +1,7 @@
 import { createContext } from 'react';
 
+import type { QuizDataWithCorrectOptions } from '@/containers';
+
 export type OptionType = { id: string; label: string; checked: boolean };
 
 export type QuestionConfig = {
@@ -53,6 +55,7 @@ type QuizContextType = {
 
   // Reset Create Form
   resetCreateForm: () => void;
+  initCreateForm: (quizData: QuizDataWithCorrectOptions) => void;
 };
 
 export const QuizContext = createContext<QuizContextType | undefined>(
