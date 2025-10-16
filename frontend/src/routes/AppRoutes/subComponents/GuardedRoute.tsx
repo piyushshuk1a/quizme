@@ -2,7 +2,9 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Box, CircularProgress } from '@mui/material';
 import { type PropsWithChildren } from 'react';
 
+import { CALLBACK_URL } from '@/constants';
 import { useUserInfo } from '@/hooks';
+import { setRedirectTo } from '@/utils';
 
 export const GuardedRoute = ({ children }: PropsWithChildren) => {
   const { loginWithRedirect, isLoading } = useAuth0();
@@ -21,7 +23,8 @@ export const GuardedRoute = ({ children }: PropsWithChildren) => {
     );
 
   if (!isAuthenticated) {
-    loginWithRedirect();
+    setRedirectTo();
+    loginWithRedirect({ authorizationParams: { redirect_uri: CALLBACK_URL } });
   }
 
   return <>{children}</>;

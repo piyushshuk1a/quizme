@@ -1,8 +1,9 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Link } from '@mui/material';
 
+import { CALLBACK_URL } from '@/constants';
 import { NAVBAR_BG_COLOR } from '@/theme';
-import { pxToRem } from '@/utils';
+import { pxToRem, setRedirectTo } from '@/utils';
 
 import { Button } from '../Button';
 import { Container } from '../Container';
@@ -57,7 +58,15 @@ export const Navbar = () => {
         </Box>
 
         {!isAuthenticated && (
-          <Button color="gradient" onClick={() => loginWithRedirect()}>
+          <Button
+            color="gradient"
+            onClick={() => (
+              setRedirectTo(),
+              loginWithRedirect({
+                authorizationParams: { redirect_uri: CALLBACK_URL },
+              })
+            )}
+          >
             Log In
           </Button>
         )}

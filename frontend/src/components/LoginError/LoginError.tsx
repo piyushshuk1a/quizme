@@ -1,6 +1,9 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Stack, Typography, type BoxProps } from '@mui/material';
 
+import { CALLBACK_URL } from '@/constants';
+import { setRedirectTo } from '@/utils';
+
 import { Button } from '../Button';
 import { ScreenCenter } from '../ScreenCenter';
 
@@ -9,12 +12,10 @@ import type { ReactNode } from 'react';
 export const LoginError = ({
   imgHeight = 300,
   message,
-  redirectUri = import.meta.env.VITE_APP_BASE_URL as string,
   ...rest
 }: BoxProps & {
   imgHeight?: number;
   message?: ReactNode;
-  redirectUri?: string;
 }) => {
   const { loginWithRedirect } = useAuth0();
 
@@ -30,11 +31,12 @@ export const LoginError = ({
               </Typography>
               <Button
                 size="large"
-                onClick={() =>
+                onClick={() => (
+                  setRedirectTo(),
                   loginWithRedirect({
-                    authorizationParams: { redirect_uri: redirectUri },
+                    authorizationParams: { redirect_uri: CALLBACK_URL },
                   })
-                }
+                )}
               >
                 Login to QuizMaster
               </Button>

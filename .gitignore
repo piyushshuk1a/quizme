@@ -21,3 +21,5 @@ storybook-static
 
 # Firestore service account file
 *firebase*.json
+
+.DS_Store

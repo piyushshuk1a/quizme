@@ -48,10 +48,7 @@ export const ListQuiz = ({ myQuizzes = false, invited }: ListQuizProps) => {
 
   if (error)
     return error === 'Unauthorized' ? (
-      <LoginError
-        height="calc(100vh - 200px)"
-        redirectUri={window.location.href}
-      />
+      <LoginError height="calc(100vh - 200px)" />
     ) : (
       <Error height="calc(100vh - 200px)" />
     );

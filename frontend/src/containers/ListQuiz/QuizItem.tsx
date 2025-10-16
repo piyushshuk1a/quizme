@@ -82,9 +82,23 @@ export const QuizItem = ({
         </Button>
       )}
       {isMyQuiz && isPublished && (
-        <Button variant="outlined">Invite Candidate</Button>
+        <Button
+          variant="outlined"
+          onClick={() =>
+            navigate(`${generatePath(ROUTES.quiz, { id })}?tab=invitations`)
+          }
+        >
+          Invite Candidate
+        </Button>
       )}
-      {!isMyQuiz && <Button variant="outlined">Take Quiz</Button>}
+      {!isMyQuiz && (
+        <Button
+          variant="outlined"
+          onClick={() => navigate(generatePath(ROUTES.quiz, { id }))}
+        >
+          Take Quiz
+        </Button>
+      )}
     </Card>
   );
 };

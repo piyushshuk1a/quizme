@@ -25,3 +25,7 @@ export const API_ENDPOINTS = {
 } as const;
 
 export const ROLE_NAMESPACE = 'https://myapp.com/role';
+
+export const REDIRECT_TO_SESSION_KEY = 'returnTo';
+
+export const CALLBACK_URL = `${import.meta.env.VITE_APP_BASE_URL}/callback`;

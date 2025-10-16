@@ -3,9 +3,9 @@ import { AdminPanelSettings, School } from '@mui/icons-material';
 import { Box, Link, Typography } from '@mui/material';
 
 import { Button, Container } from '@/components';
-import { ROUTES, USER_ROLES } from '@/constants';
+import { CALLBACK_URL, ROUTES, USER_ROLES } from '@/constants';
 import { useUserInfo } from '@/hooks';
-import { pxToRem } from '@/utils';
+import { pxToRem, setRedirectTo } from '@/utils';
 
 export const HeroSection = () => {
   const { loginWithRedirect, isAuthenticated } = useAuth0();
@@ -59,12 +59,16 @@ export const HeroSection = () => {
               size="large"
               color="gradient"
               startIcon={<AdminPanelSettings />}
-              onClick={() =>
+              onClick={() => (
+                setRedirectTo(),
                 loginWithRedirect({
-                  authorizationParams: { screen_hint: 'signup' },
+                  authorizationParams: {
+                    screen_hint: 'signup',
+                    redirect_uri: CALLBACK_URL,
+                  },
                   appState: { role: USER_ROLES.admin },
                 })
-              }
+              )}
             >
               Start as Admin
             </Button>
@@ -72,12 +76,16 @@ export const HeroSection = () => {
               size="large"
               color="secondary"
               startIcon={<School />}
-              onClick={() =>
+              onClick={() => (
+                setRedirectTo(),
                 loginWithRedirect({
-                  authorizationParams: { screen_hint: 'signup' },
+                  authorizationParams: {
+                    screen_hint: 'signup',
+                    redirect_uri: CALLBACK_URL,
+                  },
                   appState: { role: USER_ROLES.candidate },
                 })
-              }
+              )}
             >
               Join as Candidate
             </Button>
