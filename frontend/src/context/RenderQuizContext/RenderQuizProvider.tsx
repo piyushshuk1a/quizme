@@ -1,17 +1,11 @@
 import { useState, type ReactNode } from 'react';
 
-import { type Question } from '@/containers';
+import { type QuizData } from '@/containers';
 
 import { RenderQuizContext } from './RenderQuizContext';
 
-import type { QuizInfo } from '../QuizContext';
-
 interface RenderQuizProviderProps {
-  quizData: QuizInfo & {
-    questions: (Omit<Question, 'correctOptions'> & {
-      correctOptions?: string[];
-    })[];
-  };
+  quizData: QuizData;
   children: ReactNode;
 }
 

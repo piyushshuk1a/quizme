@@ -12,9 +12,18 @@ export interface QuizData {
   publishedBy?: string;
   durationMinutes: number;
   totalQuestions: number;
-  questions: Array<Omit<Question, 'correctOptions'>>;
+  questions: Array<
+    Omit<Question, 'correctOptions'> & { correctOptions?: string }
+  >;
 }
 
 export type QuizDataWithCorrectOptions = Omit<QuizData, 'questions'> & {
   questions: Question[];
+};
+
+export type InfoCardProps = { label: string; value: string; color: string };
+
+export type QuizProps = {
+  isOwner: boolean;
+  isAdmin: boolean;
 };

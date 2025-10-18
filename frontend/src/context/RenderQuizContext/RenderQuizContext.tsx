@@ -1,14 +1,10 @@
 import { createContext } from 'react';
 
-import type { Question } from '@/containers';
-
-import type { QuizInfo } from '../QuizContext';
+import type { QuizData } from '@/containers';
 
 interface RenderQuizState {
-  quizInfo: QuizInfo;
-  questions: (Omit<Question, 'correctOptions'> & {
-    correctOptions?: string[];
-  })[];
+  quizInfo: Omit<QuizData, 'questions'>;
+  questions: QuizData['questions'];
   currentQuestionIndex: number;
   userAnswers: Record<number, string[]>;
   goToNextQuestion: () => void;

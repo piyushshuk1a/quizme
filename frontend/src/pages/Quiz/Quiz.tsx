@@ -2,16 +2,18 @@ import { CircularProgress } from '@mui/material';
 import { generatePath, useParams } from 'react-router';
 
 import { DataNotAvailable, Error, ScreenCenter } from '@/components';
-import { API_ENDPOINTS } from '@/constants';
-import { type QuizData } from '@/containers';
+import { API_ENDPOINTS, USER_ROLES } from '@/constants';
+import { Quiz as QuizContainer, type QuizData } from '@/containers';
 import { RenderQuizProvider } from '@/context';
-import { useFetch } from '@/hooks';
-
+import { useFetch, useUserInfo } from '@/hooks';
 export const Quiz = () => {
+  const { id: userId, role } = useUserInfo();
   const { id } = useParams() as { id: string };
   const { isLoading, data, error } = useFetch<QuizData>({
     path: generatePath(API_ENDPOINTS.getQuiz, { id }),
   });
+  const isOwner = data?.publishedBy === userId;
+  const isAdmin = role === USER_ROLES.admin;
 
   if (error) {
     return <Error />;
@@ -30,10 +32,8 @@ export const Quiz = () => {
   }
 
   return (
-    <RenderQuizProvider
-      quizData={{ ...data, duration: data.durationMinutes.toString() }}
-    >
-      <Quiz />
+    <RenderQuizProvider quizData={{ ...data }}>
+      <QuizContainer isOwner={isOwner} isAdmin={isAdmin} />
     </RenderQuizProvider>
   );
 };
