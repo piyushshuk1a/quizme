@@ -108,6 +108,15 @@ export const getQuizById = async (
       questions: questions,
     };
 
+    const userRef = db
+      .collection(FIRESTORE_COLLECTIONS.users)
+      .doc(quizData.publishedBy);
+    const userDoc = await userRef.get();
+    const userData = userDoc.data();
+    quizData.publishedBy = userData
+      ? `${userData.firstName} ${userData.lastName}`
+      : quizData.publishedBy;
+
     return quizData;
   } catch (error) {
     console.error('Error fetching quiz:', error);

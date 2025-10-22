@@ -39,11 +39,11 @@ export const Quiz = ({ isOwner }: QuizProps) => {
             </Button>
           )}
         </Box>
-        <Box display="flex" justifyContent="space-between">
-          <Stack width={'calc(70% - 10px)'}>
+        <Box display="flex" justifyContent="space-between" gap={20}>
+          <Stack width="80%">
             <QuizDetails />
           </Stack>
-          <Stack width={'calc(30% - 10px)'}>
+          <Stack minWidth={300} width="20%">
             <CreatedBy />
           </Stack>
         </Box>
