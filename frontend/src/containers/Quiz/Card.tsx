@@ -5,11 +5,11 @@ export const Card = ({ children, ...rest }: CardProps) => {
     <MuiCard
       {...rest}
       sx={{
-        ...rest?.sx,
+        p: 16,
         background: '#1F2937',
         borderRadius: 2,
-        p: 16,
         width: '100%',
+        ...rest?.sx,
       }}
       variant="outlined"
     >

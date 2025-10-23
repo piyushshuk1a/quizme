@@ -1,4 +1,6 @@
-import type { Complexity, Question } from '../CreateQuiz';
+import { type ReactNode } from 'react';
+
+import { type Complexity, type Question } from '../CreateQuiz';
 
 export interface QuizData {
   id?: string;
@@ -26,4 +28,12 @@ export type InfoCardProps = { label: string; value: string; color: string };
 export type QuizProps = {
   isOwner: boolean;
   isAdmin: boolean;
+  isCompleted: boolean;
+};
+
+export type QuizResultInfoProps = {
+  color: string;
+  value: string | number;
+  label: string;
+  icon: ReactNode;
 };

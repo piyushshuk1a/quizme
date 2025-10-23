@@ -7,7 +7,7 @@ import { COMPLEXITY_CHIP_COLOR_MAP } from '../ListQuiz';
 import { Card } from './Card';
 import { InfoCard } from './InfoCard';
 
-export const QuizDetails = () => {
+export const QuizDetails = ({ smallView = false }: { smallView?: boolean }) => {
   const { quizInfo } = useRenderQuiz();
   const complexity = quizInfo.complexity;
 
@@ -23,7 +23,11 @@ export const QuizDetails = () => {
           </Typography>
           <Typography variant="body2">{quizInfo.description}</Typography>
         </Box>
-        <Box display="flex" gap={16}>
+        <Box
+          display="flex"
+          gap={16}
+          flexDirection={smallView ? 'column' : 'row'}
+        >
           <InfoCard
             label="Questions"
             value={quizInfo.totalQuestions.toString()}

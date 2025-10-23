@@ -33,7 +33,7 @@ export const Quiz = () => {
 
   return (
     <RenderQuizProvider quizData={{ ...data }}>
-      <QuizContainer isOwner={isOwner} isAdmin={isAdmin} />
+      <QuizContainer isCompleted={true} isOwner={isOwner} isAdmin={isAdmin} />
     </RenderQuizProvider>
   );
 };
