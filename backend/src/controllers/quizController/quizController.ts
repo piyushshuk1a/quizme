@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
 import { FIRESTORE_COLLECTIONS, ROLE_NAMESPACE, USER_ROLES } from '@/config';
-import { db } from '@/firebase';
+import { db, FieldValue } from '@/firebase';
 import {
   createQuiz,
   getAllPublicQuizzes,
@@ -10,6 +10,7 @@ import {
   getQuizAttempt,
   getQuizById,
   updateQuizAndQuestions,
+  upsertQuizAttempt,
 } from '@/services';
 
 import {
@@ -126,5 +127,32 @@ export const getQuizByIdController = async (
   } catch (error) {
     console.error(error);
     return res.status(500).send({ message: 'Internal Server Error ' });
+  }
+};
+
+export const startQuizController = async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const userId = req.auth?.payload?.sub as string;
+
+  try {
+    const quizAttempt = await getQuizAttempt(userId, id);
+    const quizData = await getQuizById(id, true, userId);
+    const quizAttemptData = {
+      quizId: id,
+      userId: userId,
+      maxPossibleScore: quizData?.questions.reduce(
+        (maxScore, curr) => curr.points + maxScore,
+        0,
+      ),
+      startedAt: FieldValue.serverTimestamp(),
+      status: 'in_progress' as const,
+      ...(quizAttempt ?? {}),
+    };
+    await upsertQuizAttempt(quizAttemptData);
+
+    return res.status(200).json({ status: 'Ok' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 };

@@ -22,6 +22,8 @@ export const API_ENDPOINTS = {
   createQuiz: '/api/quizzes',
   getQuiz: '/api/quizzes/:id',
   listQuizzes: '/api/quizzes',
+  startQuiz: '/api/quizzes/:id/start',
+  submitQuiz: '/api/quizzes/:id/submit',
 } as const;
 
 export const ROLE_NAMESPACE = 'https://myapp.com/role';

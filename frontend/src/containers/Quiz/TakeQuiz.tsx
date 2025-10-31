@@ -1,9 +1,20 @@
 import { PlayArrow, Visibility } from '@mui/icons-material';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  Typography,
+  type CircularProgressProps,
+} from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { useState } from 'react';
+import { generatePath, useParams } from 'react-router';
 
 import { Container } from '@/components';
+import { API_ENDPOINTS } from '@/constants';
 import { useRenderQuiz } from '@/context';
+import { useMutation } from '@/hooks';
 
 import { AttemptQuiz } from './AttemptQuiz';
 import { CreatedBy } from './CreatedBy';
@@ -12,8 +23,28 @@ import { QuizDetails } from './QuizDetails';
 import type { QuizProps } from './Quiz.types';
 
 export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
+  const { id } = useParams() as { id: string };
   const { quizInfo } = useRenderQuiz();
   const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
+  const { trigger: startQuiz, isMutating: isStartingQuiz } = useMutation<
+    Record<string, string>
+  >({
+    path: generatePath(API_ENDPOINTS.startQuiz, { id }),
+    onSuccess: () => {
+      setIsQuizOpen(true);
+    },
+    onError: () => {
+      enqueueSnackbar(
+        'Oops! Something went wrong. Please try again after refreshing.',
+        { variant: 'error' },
+      );
+    },
+  });
+
+  const handleStartQuiz = () => {
+    startQuiz({});
+  };
 
   return (
     <Box display="flex" alignItems="center" justifyContent="center">
@@ -31,8 +62,18 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
             <Button
               color="primary"
               variant="contained"
-              startIcon={<PlayArrow />}
-              onClick={() => setIsQuizOpen(true)}
+              startIcon={
+                isStartingQuiz ? (
+                  <CircularProgress
+                    color={'white' as CircularProgressProps['color']}
+                    size={16}
+                    sx={{ mr: 4 }}
+                  />
+                ) : (
+                  <PlayArrow />
+                )
+              }
+              onClick={handleStartQuiz}
             >
               Start Quiz
             </Button>

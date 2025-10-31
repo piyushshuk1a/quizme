@@ -24,6 +24,8 @@ export const upsertQuizAttempt = async (
 
   // Prepare the data to be set/merged
   const preparedData: Partial<QuizAttempt> = {
+    userId,
+    quizId,
     ...dataToUpdate,
   };
 
