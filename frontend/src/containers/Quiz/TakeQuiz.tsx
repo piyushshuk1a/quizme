@@ -14,14 +14,14 @@ import { generatePath, useParams } from 'react-router';
 import { Container } from '@/components';
 import { API_ENDPOINTS } from '@/constants';
 import { useRenderQuiz } from '@/context';
-import { useMutation } from '@/hooks';
+import { useFetch, useMutation } from '@/hooks';
 import { Timer } from '@/utils';
 
 import { AttemptQuiz } from './AttemptQuiz';
 import { CreatedBy } from './CreatedBy';
 import { QuizDetails } from './QuizDetails';
 
-import type { QuizProps } from './Quiz.types';
+import type { QuizAttempt, QuizProps } from './Quiz.types';
 
 export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
   const { id } = useParams() as { id: string };
@@ -42,12 +42,20 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
       );
     },
   });
+  const { mutate: refetchAttempt, isValidating: isFetchingAttempt } =
+    useFetch<QuizAttempt>({
+      path: generatePath(API_ENDPOINTS.quizAttempt, { id }),
+    });
   const { trigger: submitQuiz, isMutating: isSubmittingQuiz } = useMutation<{
     data: Record<string, string[] | number>[];
   }>({
     path: generatePath(API_ENDPOINTS.submitQuiz, { id }),
     onSuccess: () => {
+      enqueueSnackbar('Quiz submitted successfully!', {
+        variant: 'success',
+      });
       setIsQuizOpen(false);
+      refetchAttempt();
     },
     onError: () => {
       enqueueSnackbar('Oops! Something went wrong. Please try again', {
@@ -100,7 +108,7 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
               color="primary"
               variant="contained"
               startIcon={
-                isStartingQuiz ? (
+                isStartingQuiz || isFetchingAttempt ? (
                   <CircularProgress
                     color={'white' as CircularProgressProps['color']}
                     size={16}

@@ -1,6 +1,7 @@
 import { AccessTime, Check, Close } from '@mui/icons-material';
 import { alpha, Box, Stack, Typography } from '@mui/material';
 
+import { useRenderQuiz } from '@/context';
 import { pxToRem } from '@/utils';
 
 import { Card } from './Card';
@@ -42,6 +43,15 @@ export const QuizResultInfo = ({
 );
 
 export const YourAttempt = () => {
+  const { attempt, quizInfo } = useRenderQuiz();
+
+  const timeTake =
+    !attempt?.startedAt || !attempt.completedAt
+      ? quizInfo.durationMinutes
+      : (new Date(attempt.completedAt).getTime() -
+          new Date(attempt.startedAt).getTime()) /
+        (1000 * 60);
+
   return (
     <Card
       sx={{
@@ -63,32 +73,34 @@ export const YourAttempt = () => {
         bgcolor={alpha('#08CB00', 0.3)}
       >
         <Typography variant="h4" component="span">
-          85%
+          {attempt?.percentage ?? 0}%
         </Typography>
       </Box>
       <Stack gap={8}>
         <Typography variant="h5" sx={{ fontWeight: 800 }}>
           Quiz Complete
         </Typography>
-        <Typography sx={{ opacity: 0.8 }}>You scored 17 out of 29</Typography>
+        <Typography sx={{ opacity: 0.8 }}>
+          You scored {attempt?.score ?? 0} out of {attempt?.maxPossibleScore}
+        </Typography>
       </Stack>
       <Box display="flex" gap={20} width="100%">
         <QuizResultInfo
           color="#22C55E"
           label="Correct Answers"
-          value={17}
+          value={attempt?.answers?.filter((ans) => ans.isCorrect).length ?? 0}
           icon={<Check sx={{ fontSize: 28 }} />}
         />
         <QuizResultInfo
           color="#EF4444"
           label="Incorrect Answers"
-          value={17}
+          value={attempt?.answers?.filter((ans) => !ans.isCorrect).length ?? 0}
           icon={<Close sx={{ fontSize: 28 }} />}
         />
         <QuizResultInfo
           color="#3B82F6"
           label="Time Taken"
-          value={17}
+          value={timeTake.toFixed(2)}
           icon={<AccessTime sx={{ fontSize: 28 }} />}
         />
       </Box>

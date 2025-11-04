@@ -3,7 +3,11 @@ import { generatePath, useParams } from 'react-router';
 
 import { DataNotAvailable, Error, ScreenCenter } from '@/components';
 import { API_ENDPOINTS, USER_ROLES } from '@/constants';
-import { Quiz as QuizContainer, type QuizData } from '@/containers';
+import {
+  Quiz as QuizContainer,
+  type QuizAttempt,
+  type QuizData,
+} from '@/containers';
 import { RenderQuizProvider } from '@/context';
 import { useFetch, useUserInfo } from '@/hooks';
 export const Quiz = () => {
@@ -12,14 +16,21 @@ export const Quiz = () => {
   const { isLoading, data, error } = useFetch<QuizData>({
     path: generatePath(API_ENDPOINTS.getQuiz, { id }),
   });
+  const {
+    isLoading: isLoadingQuizAttempt,
+    data: quizAttemptData,
+    error: errorQuizAttempt,
+  } = useFetch<QuizAttempt>({
+    path: generatePath(API_ENDPOINTS.quizAttempt, { id }),
+  });
   const isOwner = data?.publishedBy === userId;
   const isAdmin = role === USER_ROLES.admin;
 
-  if (error) {
+  if (error || errorQuizAttempt) {
     return <Error />;
   }
 
-  if (isLoading) {
+  if (isLoading || isLoadingQuizAttempt) {
     return (
       <ScreenCenter>
         <CircularProgress />
@@ -32,7 +43,7 @@ export const Quiz = () => {
   }
 
   return (
-    <RenderQuizProvider quizData={{ ...data }}>
+    <RenderQuizProvider quizData={{ ...data, attempt: quizAttemptData }}>
       <QuizContainer isCompleted={false} isOwner={isOwner} isAdmin={isAdmin} />
     </RenderQuizProvider>
   );

@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react';
 
-import { type QuizData } from '@/containers';
+import { type QuizAttempt, type QuizData } from '@/containers';
 
 import { RenderQuizContext } from './RenderQuizContext';
 
 interface RenderQuizProviderProps {
-  quizData: QuizData;
+  quizData: QuizData & { attempt?: QuizAttempt };
   children: ReactNode;
 }
 
@@ -37,8 +37,10 @@ export const RenderQuizProvider: React.FC<RenderQuizProviderProps> = ({
     }));
   };
 
-  const { questions, ...quizInfo } = quizData;
+  const { questions, attempt, ...quizInfo } = quizData;
+
   const value = {
+    attempt,
     questions: questions,
     currentQuestionIndex,
     userAnswers,

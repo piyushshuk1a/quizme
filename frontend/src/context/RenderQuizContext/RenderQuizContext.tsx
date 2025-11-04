@@ -1,9 +1,10 @@
 import { createContext } from 'react';
 
-import type { QuizData } from '@/containers';
+import type { QuizAttempt, QuizData } from '@/containers';
 
 interface RenderQuizState {
   quizInfo: Omit<QuizData, 'questions'>;
+  attempt?: QuizAttempt;
   questions: QuizData['questions'];
   currentQuestionIndex: number;
   userAnswers: Record<number, string[]>;
