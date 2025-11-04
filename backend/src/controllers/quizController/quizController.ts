@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
 import { FIRESTORE_COLLECTIONS, ROLE_NAMESPACE, USER_ROLES } from '@/config';
-import { db, FieldValue } from '@/firebase';
+import { db } from '@/firebase';
 import { Question } from '@/models';
 import {
   createQuiz,
@@ -145,7 +145,7 @@ export const startQuizController = async (req: Request, res: Response) => {
         (maxScore, curr) => curr.points + maxScore,
         0,
       ),
-      startedAt: FieldValue.serverTimestamp(),
+      startedAt: new Date().toUTCString(),
       status: 'in_progress' as const,
       ...(quizAttempt ?? {}),
     };
@@ -216,14 +216,27 @@ export const submitQuizController = async (req: Request, res: Response) => {
       maxPossibleScore,
       score,
       percentage: Math.trunc((score / maxPossibleScore) * 100),
-      completedAt: FieldValue.serverTimestamp(),
+      completedAt: new Date().toUTCString(),
       status: 'completed' as const,
       answers: answerData,
     };
-    console.log(quizAttemptData);
     await upsertQuizAttempt(quizAttemptData);
 
     return res.status(200).json({ status: 'Ok' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
+export const getQuizAttemptController = async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const userId = req.auth?.payload?.sub as string;
+
+  try {
+    const quizAttempt = await getQuizAttempt(userId, id);
+
+    return res.status(200).json(quizAttempt ?? {});
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Something went wrong' });

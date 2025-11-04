@@ -1,5 +1,3 @@
-import admin from 'firebase-admin';
-
 export interface QuizAttempt {
   attemptId?: string;
   quizId: string;
@@ -7,8 +5,8 @@ export interface QuizAttempt {
   score?: number;
   maxPossibleScore: number;
   percentage?: number;
-  startedAt: admin.firestore.FieldValue;
-  completedAt?: admin.firestore.FieldValue;
+  startedAt: string;
+  completedAt?: string;
   status: 'completed' | 'in_progress';
   answers?: Array<{
     order: number;

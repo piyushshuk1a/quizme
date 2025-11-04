@@ -1,5 +1,3 @@
-import admin from 'firebase-admin';
-
 import { FIRESTORE_COLLECTIONS } from '@/config';
 import { db } from '@/firebase';
 import { QuizAttempt } from '@/models';
@@ -33,7 +31,7 @@ export const upsertQuizAttempt = async (
     !dataToUpdate.startedAt &&
     !quizAttemptRef.get().then((doc) => doc.exists)
   ) {
-    preparedData.startedAt = admin.firestore.FieldValue.serverTimestamp();
+    preparedData.startedAt = new Date().toUTCString();
   }
   if (!dataToUpdate.status) {
     preparedData.status = 'in_progress';

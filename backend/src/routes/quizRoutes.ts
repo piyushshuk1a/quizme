@@ -3,6 +3,7 @@ import express from 'express';
 import {
   createQuizController,
   getAllPublicQuizzesController,
+  getQuizAttemptController,
   getQuizByIdController,
   startQuizController,
   submitQuizController,
@@ -22,4 +23,5 @@ router.put('/:id/invite', checkJwt, () => {}); // Invite candidates for a quiz
 router.post('/:id/start', checkJwt, startQuizController); // Start a quiz
 router.post('/:id/submit', checkJwt, submitQuizController); // Submit a quiz
 
+router.get('/:id/attempt', checkJwt, getQuizAttemptController);
 export default router;
