@@ -1,3 +1,5 @@
+import admin from 'firebase-admin';
+
 import { FIRESTORE_COLLECTIONS } from '@/config';
 import { db } from '@/firebase';
 import { Invited, Question, Quiz } from '@/models';
@@ -77,11 +79,14 @@ export const updateQuizAndQuestions = async (
 };
 
 type WithOrWithoutAnswers = PartialBy<Question, 'correctOptions'>;
+type QuizDataTransformed = Quiz & { questions: WithOrWithoutAnswers[] } & {
+  publishedByName?: string;
+};
 export const getQuizById = async (
   quizId: string,
   includeAnswers: boolean,
   userId: string,
-): Promise<(Quiz & { questions: WithOrWithoutAnswers[] }) | null> => {
+): Promise<QuizDataTransformed | null> => {
   try {
     const quizDocRef = db.collection(FIRESTORE_COLLECTIONS.quizzes).doc(quizId);
     const quizDoc = await quizDocRef.get();
@@ -115,7 +120,7 @@ export const getQuizById = async (
     });
 
     // Combine quiz data and questions
-    const quizData = {
+    const quizData: QuizDataTransformed = {
       ...quizDocData,
       questions: questions,
     };
@@ -125,10 +130,13 @@ export const getQuizById = async (
       .doc(quizData.publishedBy);
     const userDoc = await userRef.get();
     const userData = userDoc.data();
-    quizData.publishedBy = userData
-      ? `${userData.firstName} ${userData.lastName}`
-      : quizData.publishedBy;
 
+    if (userData)
+      quizData.publishedByName = userData
+        ? `${userData.firstName} ${userData.lastName}`
+        : quizData.publishedBy;
+
+    console.log('returning quiz data', quizData);
     return quizData;
   } catch (error) {
     console.error('Error fetching quiz:', error);
@@ -182,28 +190,52 @@ export const getAllPublicQuizzes = async (
 
 export const inviteCandidates = async (
   quizId: string,
-  candidates: Omit<Invited, 'obtainedPoints' | 'status'>[],
+  candidates: { userEmail: string; quizId?: string }[],
 ): Promise<void> => {
   try {
-    const batch = db.batch();
-    const invitedCollectionRef = db
-      .collection(FIRESTORE_COLLECTIONS.quizzes)
-      .doc(quizId)
-      .collection(FIRESTORE_COLLECTIONS.invited);
+    if (!quizId) throw new Error('quizId required');
 
-    for (const candidate of candidates) {
-      const candidateDocRef = invitedCollectionRef.doc();
-      batch.set(candidateDocRef, {
-        ...candidate,
-        obtainedPoints: 0,
+    const batch = db.batch();
+    const quizDocRef = db.collection(FIRESTORE_COLLECTIONS.quizzes).doc(quizId);
+
+    for (const cand of candidates) {
+      const emailNormalized = String(cand.userEmail || '')
+        .trim()
+        .toLowerCase();
+      if (!emailNormalized) continue;
+
+      // deterministic id to avoid duplicates
+      const safeId = encodeURIComponent(emailNormalized);
+
+      // write per-quiz invited subcollection
+      const perQuizRef = quizDocRef
+        .collection(FIRESTORE_COLLECTIONS.invited)
+        .doc(safeId);
+      const perQuizData = {
+        userEmail: emailNormalized,
+        quizId,
         status: 'invite_sent',
-      });
+        invitedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      batch.set(perQuizRef, perQuizData, { merge: true });
+
+      // write global invited collection
+      const globalRef = db
+        .collection(FIRESTORE_COLLECTIONS.invited)
+        .doc(`${quizId}_${safeId}`);
+      const globalData = {
+        userEmail: emailNormalized,
+        quizId,
+        status: 'invite_sent',
+        invitedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      batch.set(globalRef, globalData, { merge: true });
     }
 
     await batch.commit();
-  } catch (error) {
-    console.error('Error inviting candidates:', error);
-    throw new Error('Could not invite candidates.');
+  } catch (err) {
+    console.error('inviteCandidates service error', err);
+    throw err;
   }
 };
 
