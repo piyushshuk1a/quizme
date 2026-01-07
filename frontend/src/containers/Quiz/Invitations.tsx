@@ -1,3 +1,4 @@
+// frontend/src/containers/Quiz/Invitations.tsx
 import { useAuth0 } from '@auth0/auth0-react';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
 import {
@@ -20,15 +21,28 @@ type Props = {
   quizId?: string;
 };
 
-const parseEmails = (text: string) =>
+type InviteErrorResponse = {
+  message?: string;
+};
+
+const parseEmails = (text: string): string[] =>
   text
     .split(/[\n,;,]+/)
     .map((s) => s.trim().toLowerCase())
     .filter((s) => s.length > 0);
 
+const copyToClipboard = async (text: string): Promise<boolean> => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
-  const [emailsText, setEmailsText] = useState('');
-  const [isSending, setIsSending] = useState(false);
+  const [emailsText, setEmailsText] = useState<string>('');
+  const [isSending, setIsSending] = useState<boolean>(false);
   const [invitedEmails, setInvitedEmails] = useState<string[]>([]);
   const [inviteLink, setInviteLink] = useState<string>('');
 
@@ -37,20 +51,10 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
   const params = useParams() as { id?: string };
   const quizId = propQuizId ?? params.id;
 
-  const generateInviteLink = (id: string) =>
-    `${window.location.origin}/quiz/${id}?invite=true`;
+  const generateInviteLink = (id: string): string =>
+    `${window.location.origin.replace(/\/$/, '')}/quiz/${id}?invite=true`;
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      enqueueSnackbar('Copied to clipboard', { variant: 'success' });
-    } catch (err) {
-      console.error(err);
-      enqueueSnackbar('Could not copy', { variant: 'error' });
-    }
-  };
-
-  const handleSend = async () => {
+  const handleSend = async (): Promise<void> => {
     if (!quizId) {
       enqueueSnackbar('Quiz id not found', { variant: 'error' });
       return;
@@ -77,7 +81,16 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
     try {
       const token = await getAccessTokenSilently();
 
-      const response = await fetch(`/api/quizzes/${quizId}/invite`, {
+      const apiBase =
+        typeof import.meta.env.VITE_API_BASE_URL === 'string'
+          ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')
+          : '';
+
+      const url = apiBase
+        ? `${apiBase}/api/quizzes/${quizId}/invite`
+        : `/api/quizzes/${quizId}/invite`;
+
+      const response = await fetch(url, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -89,8 +102,16 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
       });
 
       if (!response.ok) {
-        const err = await response.json().catch(() => null);
-        enqueueSnackbar(err?.message || 'Could not create invitations', {
+        const text = await response.text();
+        let parsed: InviteErrorResponse | null = null;
+
+        try {
+          parsed = JSON.parse(text) as InviteErrorResponse;
+        } catch {
+          parsed = { message: text };
+        }
+
+        enqueueSnackbar(parsed?.message || 'Could not create invitations', {
           variant: 'error',
         });
         return;
@@ -108,6 +129,13 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleCopy = async (text: string): Promise<void> => {
+    const ok = await copyToClipboard(text);
+    enqueueSnackbar(ok ? 'Copied to clipboard' : 'Could not copy', {
+      variant: ok ? 'success' : 'error',
+    });
   };
 
   return (
@@ -135,10 +163,7 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
                 InputProps={{ readOnly: true }}
                 size="small"
               />
-              <Button
-                variant="outlined"
-                onClick={() => copyToClipboard(inviteLink)}
-              >
+              <Button variant="outlined" onClick={() => handleCopy(inviteLink)}>
                 Copy Link
               </Button>
             </Stack>
@@ -169,7 +194,7 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
                 <ListItem
                   key={e}
                   secondaryAction={
-                    <IconButton onClick={() => copyToClipboard(e)}>
+                    <IconButton onClick={() => handleCopy(e)}>
                       <FileCopyIcon fontSize="small" />
                     </IconButton>
                   }

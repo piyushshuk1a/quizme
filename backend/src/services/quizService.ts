@@ -190,47 +190,52 @@ export const getAllPublicQuizzes = async (
 
 export const inviteCandidates = async (
   quizId: string,
-  candidates: Omit<Invited, 'obtainedPoints' | 'status' | 'invitedAt'>[],
+  candidates: { userEmail: string; quizId?: string }[],
 ): Promise<void> => {
   try {
     if (!quizId) throw new Error('quizId required');
-    if (!Array.isArray(candidates) || candidates.length === 0) return;
 
-    const quizDocRef = db.collection(FIRESTORE_COLLECTIONS.quizzes).doc(quizId);
     const batch = db.batch();
+    const quizDocRef = db.collection(FIRESTORE_COLLECTIONS.quizzes).doc(quizId);
 
-    for (const candidate of candidates) {
-      const emailNormalized = String(candidate.userEmail).trim().toLowerCase();
+    for (const cand of candidates) {
+      const emailNormalized = String(cand.userEmail || '')
+        .trim()
+        .toLowerCase();
       if (!emailNormalized) continue;
 
-      // Use encoded email as a deterministic doc id to avoid duplicates
+      // deterministic id to avoid duplicates
       const safeId = encodeURIComponent(emailNormalized);
 
-      // per-quiz invited subcollection
-      const invitedDocRef = quizDocRef
+      // write per-quiz invited subcollection
+      const perQuizRef = quizDocRef
         .collection(FIRESTORE_COLLECTIONS.invited)
         .doc(safeId);
-
-      const invitedData: Invited = {
+      const perQuizData = {
         userEmail: emailNormalized,
         quizId,
         status: 'invite_sent',
         invitedAt: admin.firestore.FieldValue.serverTimestamp(),
-      } as unknown as Invited;
+      };
+      batch.set(perQuizRef, perQuizData, { merge: true });
 
-      batch.set(invitedDocRef, invitedData, { merge: true });
-
-      // global invited collection (so users can query invites across quizzes)
-      const globalInvitedRef = db
+      // write global invited collection
+      const globalRef = db
         .collection(FIRESTORE_COLLECTIONS.invited)
         .doc(`${quizId}_${safeId}`);
-      batch.set(globalInvitedRef, invitedData, { merge: true });
+      const globalData = {
+        userEmail: emailNormalized,
+        quizId,
+        status: 'invite_sent',
+        invitedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      batch.set(globalRef, globalData, { merge: true });
     }
 
     await batch.commit();
-  } catch (error) {
-    console.error('Error in inviteCandidates service:', error);
-    throw new Error('Could not invite candidates.');
+  } catch (err) {
+    console.error('inviteCandidates service error', err);
+    throw err;
   }
 };
 
