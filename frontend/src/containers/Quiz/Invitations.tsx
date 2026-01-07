@@ -1,16 +1,16 @@
+// frontend/src/containers/Quiz/Invitations.tsx
 import { useAuth0 } from '@auth0/auth0-react';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
 import {
   Box,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
   Paper,
   Stack,
   TextField,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
-  IconButton,
-  Button as MuiButton,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import React, { useState } from 'react';
@@ -30,9 +30,18 @@ type InvitePayload = {
 
 type Invoker = (arg: unknown) => Promise<unknown>;
 
+const copyToClipboard = async (text: string): Promise<boolean> => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
-  const [emailsText, setEmailsText] = useState('');
-  const [isSending, setIsSending] = useState(false);
+  const [emailsText, setEmailsText] = useState<string>('');
+  const [isSending, setIsSending] = useState<boolean>(false);
   const [invitedEmails, setInvitedEmails] = useState<string[]>([]);
   const [inviteLink, setInviteLink] = useState<string>('');
 
@@ -42,10 +51,10 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
   const quizId = propQuizId ?? params.id;
 
   // useMutation hook
-  const mutation = useMutation<void, InvitePayload>(
-    quizId ? `/api/quizzes/${quizId}/invite` : null,
-    { method: 'PUT' },
-  );
+  const mutation = useMutation<InvitePayload>({
+    path: quizId ? `/api/quizzes/${quizId}/invite` : null,
+    method: 'PUT',
+  });
 
   let inviteInvoker: Invoker | undefined = undefined;
   const maybe = mutation as unknown;
@@ -64,20 +73,10 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
       candidate.trigger ?? candidate.mutate ?? candidate.mutateAsync;
   }
 
-  const generateInviteLink = (id: string) =>
-    `${window.location.origin}/quiz/${id}?invite=true`;
+  const generateInviteLink = (id: string): string =>
+    `${window.location.origin.replace(/\/$/, '')}/quiz/${id}?invite=true`;
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      enqueueSnackbar('Copied to clipboard', { variant: 'success' });
-    } catch (err) {
-      console.error(err);
-      enqueueSnackbar('Could not copy', { variant: 'error' });
-    }
-  };
-
-  const handleSend = async () => {
+  const handleSend = async (): Promise<void> => {
     if (!quizId) {
       enqueueSnackbar('Quiz id not found', { variant: 'error' });
       return;
@@ -163,6 +162,13 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
     }
   };
 
+  const handleCopy = async (text: string): Promise<void> => {
+    const ok = await copyToClipboard(text);
+    enqueueSnackbar(ok ? 'Copied to clipboard' : 'Could not copy', {
+      variant: ok ? 'success' : 'error',
+    });
+  };
+
   return (
     <Paper sx={{ p: 2 }}>
       <Stack gap={2}>
@@ -195,19 +201,20 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
         {/* Invite link + copy  */}
         {inviteLink && (
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <TextField
-              value={inviteLink}
-              InputProps={{ readOnly: true }}
-              size="small"
-              fullWidth
-            />
-            <MuiButton
-              variant="outlined"
-              size="medium"
-              onClick={() => copyToClipboard(inviteLink)}
-            >
-              Copy Link
-            </MuiButton>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              Share this invite link:
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                value={inviteLink}
+                InputProps={{ readOnly: true }}
+                size="small"
+                fullWidth
+              />
+              <Button variant="outlined" onClick={() => handleCopy(inviteLink)}>
+                Copy Link
+              </Button>
+            </Stack>
           </Box>
         )}
 
@@ -231,7 +238,7 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
                 <ListItem
                   key={e}
                   secondaryAction={
-                    <IconButton onClick={() => copyToClipboard(e)}>
+                    <IconButton onClick={() => handleCopy(e)}>
                       <FileCopyIcon fontSize="small" />
                     </IconButton>
                   }

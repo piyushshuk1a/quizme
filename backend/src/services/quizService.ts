@@ -4,8 +4,8 @@ import { FIRESTORE_COLLECTIONS } from '@/config';
 import { db } from '@/firebase';
 import { Invited, Question, Quiz } from '@/models';
 import {
-  getInviteSafeId,
   getGlobalInviteDocId,
+  getInviteSafeId,
   normalizeEmail,
 } from '@/utils/inviteUtils';
 
@@ -193,7 +193,6 @@ export const inviteCandidates = async (
 ): Promise<void> => {
   try {
     if (!quizId) throw new Error('quizId required');
-    if (!Array.isArray(candidates) || candidates.length === 0) return;
 
     const batch = db.batch();
     const quizDocRef = db.collection(FIRESTORE_COLLECTIONS.quizzes).doc(quizId);
@@ -279,9 +278,11 @@ export const updateInvitedCandidate = async (
   }
 };
 
+type InvitedWithId = Invited & { id: string };
+
 export const listInvitedCandidates = async (
   quizId: string,
-): Promise<Invited[]> => {
+): Promise<InvitedWithId[]> => {
   try {
     const invitedCollectionRef = db
       .collection(FIRESTORE_COLLECTIONS.quizzes)
@@ -289,7 +290,7 @@ export const listInvitedCandidates = async (
       .collection(FIRESTORE_COLLECTIONS.invited);
     const invitedSnapshot = await invitedCollectionRef.get();
 
-    const invitedCandidates: Invited[] = [];
+    const invitedCandidates: InvitedWithId[] = [];
     invitedSnapshot.forEach((doc) => {
       invitedCandidates.push({ id: doc.id, ...(doc.data() as Invited) });
     });
