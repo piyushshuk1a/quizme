@@ -19,9 +19,13 @@
     ]
   },
   "devDependencies": {
+    "@types/nodemailer": "^7.0.4",
     "eslint": "^9.35.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.6",
     "prettier": "^3.6.2"
+  },
+  "dependencies": {
+    "nodemailer": "^7.0.12"
   }
 }
