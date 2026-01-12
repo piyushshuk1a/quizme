@@ -238,7 +238,6 @@ export const getQuizAttemptController = async (req: Request, res: Response) => {
 
   try {
     const quizAttempt = await getQuizAttempt(userId, id);
-    console.log('quiz Attempt is', quizAttempt);
 
     return res.status(200).json(quizAttempt ?? {});
   } catch (error) {
@@ -246,9 +245,6 @@ export const getQuizAttemptController = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Something went wrong' });
   }
 };
-
-// Paste these controller functions into backend/src/controllers/quizController/quizController.ts
-// (append near other exported controllers)
 
 export const inviteCandidatesController = async (
   req: Request,
