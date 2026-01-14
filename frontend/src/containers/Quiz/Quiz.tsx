@@ -40,5 +40,3 @@ export const Quiz = ({ ...rest }: QuizProps) => {
 
   return <TakeQuiz {...rest} />;
 };
-
-export default Quiz;
