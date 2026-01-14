@@ -2,7 +2,6 @@ import { useAuth0 } from '@auth0/auth0-react';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
 import {
   Box,
-  Button,
   Paper,
   Stack,
   TextField,
@@ -15,6 +14,8 @@ import {
 import { useSnackbar } from 'notistack';
 import React, { useState } from 'react';
 import { useParams } from 'react-router';
+
+import { Button } from '@/components/Button';
 
 type Props = {
   quizId?: string;
@@ -118,11 +119,10 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
         </Typography>
 
         <Typography variant="body2" sx={{ opacity: 0.8 }}>
-          Enter one or more email addresses (comma, semicolon or newline
-          separated). Invitations will be recorded in the application — invited
-          users will see this quiz in their Invitations tab after they log in.
+          Enter email addresses. For multiple emails, separate them with commas.
+          Invited users will see this quiz in their Invitations tab after
+          logging in.
         </Typography>
-
         {inviteLink && (
           <Box>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
