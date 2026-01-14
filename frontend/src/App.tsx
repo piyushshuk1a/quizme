@@ -12,7 +12,6 @@ import { pxToRem } from './utils';
 
 export const App = () => {
   const { updateRole } = useSignupRole();
-  console.log('debug: location', window.location.origin);
 
   return (
     <BrowserRouter>

@@ -23,7 +23,6 @@ export const Quiz = () => {
   } = useFetch<QuizAttempt>({
     path: generatePath(API_ENDPOINTS.quizAttempt, { id }),
   });
-  console.log('data.publishedBy', data?.publishedBy, 'userId is', userId);
   const isOwner = data?.publishedBy === userId;
   const isAdmin = role === USER_ROLES.admin;
 

@@ -1,4 +1,3 @@
-// frontend/src/containers/Quiz/Quiz.tsx
 import React from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -12,7 +11,6 @@ import { TakeQuiz } from './TakeQuiz';
 import type { QuizProps } from './Quiz.types';
 
 export const Quiz = ({ ...rest }: QuizProps) => {
-  // hooks always run unconditionally and in the same order
   const { attempt, quizInfo } = useRenderQuiz();
   const [searchParams] = useSearchParams();
   const { id: currentUserId } = useUserInfo();
