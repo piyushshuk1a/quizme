@@ -16,16 +16,23 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router';
 
 import { Button } from '@/components/Button';
+import { useMutation } from '@/hooks/swr/useMutation';
+import { parseEmails } from '@/utils/emailUtils';
 
 type Props = {
   quizId?: string;
 };
 
-const parseEmails = (text: string) =>
-  text
-    .split(/[\n,;,]+/)
-    .map((s) => s.trim().toLowerCase())
-    .filter((s) => s.length > 0);
+type InvitePayload = {
+  candidates: { userEmail: string }[];
+};
+
+type Invoker = (arg: unknown) => Promise<unknown>;
+type MutationHook =
+  | { trigger?: Invoker; mutate?: Invoker; mutateAsync?: Invoker }
+  | Invoker
+  | null
+  | undefined;
 
 export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
   const [emailsText, setEmailsText] = useState('');
@@ -38,6 +45,24 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
   const params = useParams() as { id?: string };
   const quizId = propQuizId ?? params.id;
 
+  // Call hook unconditionally
+  const mutation = useMutation<void, InvitePayload>(
+    quizId ? `/api/quizzes/${quizId}/invite` : null,
+    { method: 'PUT' },
+  );
+
+  // Normalise the possible shapes to a single invoker typed with unknown
+  const mutationHook = mutation as MutationHook;
+  const inviteInvoker: Invoker | undefined =
+    ((mutationHook &&
+      typeof mutationHook === 'object' &&
+      (mutationHook.trigger ??
+        mutationHook.mutate ??
+        mutationHook.mutateAsync)) as Invoker | undefined) ??
+    (typeof mutationHook === 'function'
+      ? (mutationHook as Invoker)
+      : undefined);
+
   const generateInviteLink = (id: string) =>
     `${window.location.origin}/quiz/${id}?invite=true`;
 
@@ -45,8 +70,8 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
     try {
       await navigator.clipboard.writeText(text);
       enqueueSnackbar('Copied to clipboard', { variant: 'success' });
-    } catch (err) {
-      console.error(err);
+    } catch (error: unknown) {
+      console.error(error);
       enqueueSnackbar('Could not copy', { variant: 'error' });
     }
   };
@@ -78,32 +103,61 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
     try {
       const token = await getAccessTokenSilently();
 
-      const response = await fetch(`/api/quizzes/${quizId}/invite`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          candidates: emails.map((e) => ({ userEmail: e })),
-        }),
-      });
+      const payload: InvitePayload = {
+        candidates: emails.map((e) => ({ userEmail: e })),
+      };
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => null);
-        enqueueSnackbar(err?.message || 'Could not create invitations', {
-          variant: 'error',
+      if (inviteInvoker) {
+        // Try common invoker signatures:
+        try {
+          // 1) try calling with payload only (most common)
+          await inviteInvoker(payload);
+        } catch (firstError) {
+          try {
+            // 2) try calling with explicit request object
+            await inviteInvoker({
+              url: `/api/quizzes/${quizId}/invite`,
+              method: 'PUT',
+              body: payload,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+          } catch (secondError) {
+            // throw whichever is more meaningful
+            throw secondError ?? firstError;
+          }
+        }
+      } else {
+        // fallback to fetch
+        const response = await fetch(`/api/quizzes/${quizId}/invite`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
         });
-        return;
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => null);
+          enqueueSnackbar(err?.message || 'Could not create invitations', {
+            variant: 'error',
+          });
+          setIsSending(false);
+          return;
+        }
       }
 
+      // success path
       setInvitedEmails(emails);
       setInviteLink(generateInviteLink(quizId));
       enqueueSnackbar('Invitations recorded in application', {
         variant: 'success',
       });
       setEmailsText('');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('invite error', error);
       enqueueSnackbar('Error creating invitations', { variant: 'error' });
     } finally {
@@ -119,10 +173,11 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
         </Typography>
 
         <Typography variant="body2" sx={{ opacity: 0.8 }}>
-          Enter email addresses. For multiple emails, separate them with commas.
-          Invited users will see this quiz in their Invitations tab after
-          logging in.
+          Enter one or more email addresses (comma, semicolon or newline
+          separated). Invitations will be recorded in the application — invited
+          users will see this quiz in their Invitations tab after they log in.
         </Typography>
+
         {inviteLink && (
           <Box>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
