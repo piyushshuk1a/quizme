@@ -174,8 +174,7 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
 
         <Typography variant="body2" sx={{ opacity: 0.8 }}>
           Enter one or more email addresses (comma, semicolon or newline
-          separated). Invitations will be recorded in the application — invited
-          users will see this quiz in their Invitations tab after they log in.
+          separated).
         </Typography>
 
         {inviteLink && (
