@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
-import InvitationsComponent from '@/containers/Quiz/Invitations';
+import InvitationsDialog from '@/containers/Quiz/InvitationsDialog';
 import { useRenderQuiz } from '@/context';
 import { useUserInfo } from '@/hooks';
 
@@ -11,12 +11,31 @@ import { TakeQuiz } from './TakeQuiz';
 import type { QuizProps } from './Quiz.types';
 
 export const Quiz = ({ ...rest }: QuizProps) => {
+  // Hook calls must be at top-level (before any possible early returns)
   const { attempt, quizInfo } = useRenderQuiz();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { id: currentUserId } = useUserInfo();
+
+  // dialog open state (hook at top-level)
+  const [openInvitations, setOpenInvitations] = useState(false);
 
   // safe duration calculation (avoid crash if quizInfo is undefined)
   const durationMs = (quizInfo?.durationMinutes ?? 0) * 60 * 1000;
+
+  // determine whether current user is owner (owner can invite)
+  const isOwner = Boolean(
+    quizInfo?.publishedBy && quizInfo.publishedBy === currentUserId,
+  );
+
+  // open dialog when ?tab=invitations and user is owner
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'invitations' && isOwner) {
+      setOpenInvitations(true);
+    } else {
+      setOpenInvitations(false);
+    }
+  }, [searchParams, isOwner]);
 
   // If quiz attempt is completed OR time window expired, show completed screen
   if (
@@ -27,16 +46,26 @@ export const Quiz = ({ ...rest }: QuizProps) => {
     return <QuizCompleted />;
   }
 
-  const currentTab = searchParams.get('tab');
+  const handleCloseInvitations = () => {
+    setOpenInvitations(false);
 
-  // show invitations tab only to the owner of the quiz
-  const isOwner = Boolean(
-    quizInfo?.publishedBy && quizInfo.publishedBy === currentUserId,
+    // remove tab param from URL when dialog closed
+    const next = new URLSearchParams(searchParams);
+    next.delete('tab');
+    setSearchParams(next);
+  };
+
+  return (
+    <>
+      {/* Invitations dialog — quizId is passed down */}
+      <InvitationsDialog
+        open={openInvitations}
+        onClose={handleCloseInvitations}
+        quizId={quizInfo?.id}
+      />
+
+      {/* regular quiz UI */}
+      <TakeQuiz {...rest} />
+    </>
   );
-
-  if (currentTab === 'invitations' && isOwner) {
-    return <InvitationsComponent quizId={quizInfo?.id} />;
-  }
-
-  return <TakeQuiz {...rest} />;
 };
