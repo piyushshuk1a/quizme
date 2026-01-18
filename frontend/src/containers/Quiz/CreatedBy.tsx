@@ -12,7 +12,7 @@ export const CreatedBy = () => {
       <Typography sx={{ fontWeight: 600, mb: 10 }}>Created By</Typography>
       <Box display="flex" alignItems="center" gap={10}>
         <Avatar></Avatar>
-        <Typography>{quizInfo.publishedBy}</Typography>
+        <Typography>{quizInfo.publishedByName}</Typography>
       </Box>
     </Card>
   );
