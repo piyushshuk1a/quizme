@@ -13,6 +13,7 @@ import { generatePath, useParams } from 'react-router';
 
 import { Container } from '@/components';
 import { API_ENDPOINTS } from '@/constants';
+import InvitationsDialog from '@/containers/Quiz/InvitationsDialog';
 import { useRenderQuiz } from '@/context';
 import { useFetch, useMutation } from '@/hooks';
 import { Timer } from '@/utils';
@@ -27,6 +28,7 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
   const { id } = useParams() as { id: string };
   const { quizInfo, userAnswers, questions } = useRenderQuiz();
   const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [openInvitationsModal, setOpenInvitationsModal] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const { trigger: startQuiz, isMutating: isStartingQuiz } = useMutation<
     Record<string, string>
@@ -91,6 +93,10 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
     submitQuiz({ data: answers });
   }
 
+  // Invitations dialog open/close handlers
+  const handleOpenInvitations = () => setOpenInvitationsModal(true);
+  const handleCloseInvitations = () => setOpenInvitationsModal(false);
+
   return (
     <Box display="flex" alignItems="center" justifyContent="center">
       <Container component={Stack} gap={20} width="100%">
@@ -123,16 +129,36 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
               Start Quiz
             </Button>
           )}
+
           {isOwner && (
-            <Button
-              color="primary"
-              variant="contained"
-              startIcon={<Visibility />}
-            >
-              Preview Quiz
-            </Button>
+            // keep Preview and Send Email inline and aligned
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Button
+                color="primary"
+                variant="contained"
+                startIcon={<Visibility />}
+              >
+                Preview Quiz
+              </Button>
+
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={handleOpenInvitations}
+                sx={{
+                  ml: 1,
+                  px: 2,
+                  minHeight: 40,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                }}
+              >
+                Send Email
+              </Button>
+            </Box>
           )}
         </Box>
+
         <Box display="flex" justifyContent="space-between" gap={20}>
           <Stack width="80%" gap={20}>
             <QuizDetails />
@@ -142,12 +168,21 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
           </Stack>
         </Box>
       </Container>
+
+      {/* attempt quiz modal */}
       <AttemptQuiz
         remainingTime={remainingTime}
         isOpen={isQuizOpen}
         onClose={() => setIsQuizOpen(false)}
         onSubmit={handleSubmit}
         isSubmitting={isSubmittingQuiz}
+      />
+
+      {/* Invitations modal (inline) */}
+      <InvitationsDialog
+        open={openInvitationsModal}
+        onClose={handleCloseInvitations}
+        quizId={id}
       />
     </Box>
   );

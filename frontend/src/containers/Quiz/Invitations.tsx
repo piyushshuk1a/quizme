@@ -214,7 +214,6 @@ export const Invitations: React.FC<Props> = ({ quizId: propQuizId }) => {
             ? 'Creating invitations...'
             : 'Create Invitations & Generate Link'}
         </Button>
-
         {invitedEmails.length > 0 && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle2">Invited emails</Typography>
