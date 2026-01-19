@@ -93,7 +93,7 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
     submitQuiz({ data: answers });
   }
 
-  // Invitations dialog open/close handlers
+  // Invitations modal open/close handlers
   const handleOpenInvitations = () => setOpenInvitationsModal(true);
   const handleCloseInvitations = () => setOpenInvitationsModal(false);
 
@@ -109,6 +109,7 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
           <Typography component="h1" variant="h4" sx={{ fontWeight: 700 }}>
             {quizInfo.title}
           </Typography>
+
           {!isOwner && (
             <Button
               color="primary"
@@ -118,42 +119,46 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
                   <CircularProgress
                     color={'white' as CircularProgressProps['color']}
                     size={16}
-                    sx={{ mr: 4 }}
+                    sx={{ mr: 1 }}
                   />
                 ) : (
                   <PlayArrow />
                 )
               }
               onClick={handleStartQuiz}
+              size="medium"
+              sx={{ minHeight: 40, px: 3 }}
             >
               Start Quiz
             </Button>
           )}
 
           {isOwner && (
-            // keep Preview and Send Email inline and aligned
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            // Preview and Invite buttons for quiz owner
+            <Box display="flex" alignItems="center" sx={{ gap: '12px' }}>
+              {/* Preview button */}
               <Button
                 color="primary"
                 variant="contained"
                 startIcon={<Visibility />}
+                size="large"
+                sx={{ minHeight: 48, px: 4 }}
               >
                 Preview Quiz
               </Button>
 
+              {/* Invite button */}
               <Button
                 color="primary"
                 variant="contained"
+                size="large"
                 onClick={handleOpenInvitations}
                 sx={{
-                  ml: 1,
-                  px: 2,
-                  minHeight: 40,
-                  display: 'inline-flex',
-                  alignItems: 'center',
+                  minHeight: 48,
+                  px: 4,
                 }}
               >
-                Send Email
+                Invite
               </Button>
             </Box>
           )}
@@ -178,7 +183,7 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
         isSubmitting={isSubmittingQuiz}
       />
 
-      {/* Invitations modal (inline) */}
+      {/* Invitations modal  */}
       <InvitationsDialog
         open={openInvitationsModal}
         onClose={handleCloseInvitations}
@@ -187,3 +192,5 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
     </Box>
   );
 };
+
+export default TakeQuiz;

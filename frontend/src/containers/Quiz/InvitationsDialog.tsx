@@ -3,38 +3,59 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   IconButton,
+  useMediaQuery,
+  useTheme,
+  Box,
 } from '@mui/material';
 import React from 'react';
 
-import InvitationsComponent from '@/containers/Quiz/Invitations';
+import InvitationsComponent from './Invitations';
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  quizId?: string | undefined;
+  quizId?: string;
 };
 
 const InvitationsDialog: React.FC<Props> = ({ open, onClose, quizId }) => {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
       fullWidth
-      maxWidth="sm"
+      maxWidth="md"
+      fullScreen={fullScreen}
       aria-labelledby="invite-dialog-title"
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+        },
+      }}
     >
-      <DialogTitle sx={{ m: 0, p: 2 }} id="invite-dialog-title">
+      <DialogTitle
+        id="invite-dialog-title"
+        sx={{
+          m: 0,
+          p: 3.5,
+          pl: 4,
+          pr: 10,
+          fontSize: 22,
+          fontWeight: 600,
+        }}
+      >
         Invite candidates
         <IconButton
-          aria-label="close"
+          aria-label="close invite dialog"
           onClick={onClose}
           sx={{
             position: 'absolute',
-            right: 8,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
+            right: 12,
+            top: 12,
+            p: 1.5,
           }}
           size="large"
         >
@@ -42,15 +63,18 @@ const InvitationsDialog: React.FC<Props> = ({ open, onClose, quizId }) => {
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers>
-        {/* Reuse the existing Invitations component */}
-        <InvitationsComponent quizId={quizId} />
+      <DialogContent
+        sx={{
+          p: 3.5,
+          pt: 1.5,
+        }}
+      >
+        <Box sx={{ width: '100%' }}>
+          <InvitationsComponent quizId={quizId} />
+        </Box>
       </DialogContent>
-
-      <DialogActions sx={{ px: 2, pb: 2 }}>
-        {/* Invitations controls handled inside Invitations component */}
-      </DialogActions>
     </Dialog>
   );
 };
+
 export default InvitationsDialog;
