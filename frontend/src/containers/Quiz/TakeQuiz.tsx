@@ -13,6 +13,7 @@ import { generatePath, useParams } from 'react-router';
 
 import { Container } from '@/components';
 import { API_ENDPOINTS } from '@/constants';
+import InvitationsDialog from '@/containers/Quiz/InvitationsDialog';
 import { useRenderQuiz } from '@/context';
 import { useFetch, useMutation } from '@/hooks';
 import { Timer } from '@/utils';
@@ -27,6 +28,7 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
   const { id } = useParams() as { id: string };
   const { quizInfo, userAnswers, questions } = useRenderQuiz();
   const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [openInvitationsModal, setOpenInvitationsModal] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const { trigger: startQuiz, isMutating: isStartingQuiz } = useMutation<
     Record<string, string>
@@ -91,6 +93,10 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
     submitQuiz({ data: answers });
   }
 
+  // Invitations modal open/close handlers
+  const handleOpenInvitations = () => setOpenInvitationsModal(true);
+  const handleCloseInvitations = () => setOpenInvitationsModal(false);
+
   return (
     <Box display="flex" alignItems="center" justifyContent="center">
       <Container component={Stack} gap={20} width="100%">
@@ -103,6 +109,7 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
           <Typography component="h1" variant="h4" sx={{ fontWeight: 700 }}>
             {quizInfo.title}
           </Typography>
+
           {!isOwner && (
             <Button
               color="primary"
@@ -112,27 +119,51 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
                   <CircularProgress
                     color={'white' as CircularProgressProps['color']}
                     size={16}
-                    sx={{ mr: 4 }}
+                    sx={{ mr: 1 }}
                   />
                 ) : (
                   <PlayArrow />
                 )
               }
               onClick={handleStartQuiz}
+              size="medium"
+              sx={{ minHeight: 40, px: 3 }}
             >
               Start Quiz
             </Button>
           )}
+
           {isOwner && (
-            <Button
-              color="primary"
-              variant="contained"
-              startIcon={<Visibility />}
-            >
-              Preview Quiz
-            </Button>
+            // Preview and Invite buttons for quiz owner
+            <Box display="flex" alignItems="center" sx={{ gap: '12px' }}>
+              {/* Preview button */}
+              <Button
+                color="primary"
+                variant="contained"
+                startIcon={<Visibility />}
+                size="large"
+                sx={{ minHeight: 48, px: 4 }}
+              >
+                Preview Quiz
+              </Button>
+
+              {/* Invite button */}
+              <Button
+                color="primary"
+                variant="contained"
+                size="large"
+                onClick={handleOpenInvitations}
+                sx={{
+                  minHeight: 48,
+                  px: 4,
+                }}
+              >
+                Invite
+              </Button>
+            </Box>
           )}
         </Box>
+
         <Box display="flex" justifyContent="space-between" gap={20}>
           <Stack width="80%" gap={20}>
             <QuizDetails />
@@ -142,6 +173,8 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
           </Stack>
         </Box>
       </Container>
+
+      {/* attempt quiz modal */}
       <AttemptQuiz
         remainingTime={remainingTime}
         isOpen={isQuizOpen}
@@ -149,6 +182,15 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
         onSubmit={handleSubmit}
         isSubmitting={isSubmittingQuiz}
       />
+
+      {/* Invitations modal  */}
+      <InvitationsDialog
+        open={openInvitationsModal}
+        onClose={handleCloseInvitations}
+        quizId={id}
+      />
     </Box>
   );
 };
+
+export default TakeQuiz;

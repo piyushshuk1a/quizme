@@ -12,6 +12,7 @@ export interface QuizData {
   totalPoints: number;
   isPublished?: boolean;
   publishedBy?: string;
+  publishedByName?: string;
   durationMinutes: number;
   totalQuestions: number;
   questions: Array<
