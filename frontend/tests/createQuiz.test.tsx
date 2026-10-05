@@ -194,3 +194,20 @@ test('invalid question count does not call AI and loading prevents duplicate gen
   resolve(new Response(JSON.stringify(quiz)));
   await screen.findByLabelText(/Quiz Title/);
 });
+
+test('HTML auth errors show a useful message and preserve the current quiz', async () => {
+  api.mockResolvedValueOnce(
+    new Response('<!DOCTYPE html><html>Unauthorized</html>', { status: 401 }),
+  );
+  mount(true);
+  await generate();
+  expect(
+    await screen.findByText(
+      'Your session could not be verified. Please sign out and sign in again.',
+    ),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole('tab', { name: 'Manual Creation' }));
+  expect((screen.getByLabelText(/Quiz Title/) as HTMLInputElement).value).toBe(
+    quiz.title,
+  );
+});

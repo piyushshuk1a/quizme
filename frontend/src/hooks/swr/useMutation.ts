@@ -4,6 +4,7 @@ import useNativeSwrMutation from 'swr/mutation';
 import { API_REQUEST_TYPES } from '@/constants';
 import { pathBuilder } from '@/utils';
 
+import { readApiResponse } from './apiResponse';
 import {
   type GenericParams,
   type GenericPayload,
@@ -48,13 +49,7 @@ const executeApiRequest = async <TResponse extends object | void, TPayload>(
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      throw await response.json();
-    }
-
-    const data = (await response.json()) as TResponse;
-
-    return data;
+    return await readApiResponse<TResponse>(response);
   } catch (error) {
     console.error(error);
 
