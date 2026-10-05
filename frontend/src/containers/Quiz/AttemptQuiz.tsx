@@ -50,7 +50,7 @@ export const AttemptQuiz = ({
             <AccessTimeFilled sx={{ fontSize: 16 }} />
             <Typography variant="body2">{remainingTime}</Typography>
           </Box>
-          <Button variant="text" onClick={onSubmit}>
+          <Button variant="text" onClick={onSubmit} disabled={isSubmitting}>
             Submit
           </Button>
         </Box>

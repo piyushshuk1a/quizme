@@ -88,8 +88,12 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     // Validate points
-    const pointsValue = parseInt(question.points);
-    if (!question.points || isNaN(pointsValue) || pointsValue <= 0) {
+    const pointsValue = Number(question.points);
+    if (
+      !question.points ||
+      !Number.isInteger(pointsValue) ||
+      pointsValue <= 0
+    ) {
       validationErrors.points = QUESTION_FORM_ERRORS.pointsRequired;
     }
 

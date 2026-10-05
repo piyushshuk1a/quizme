@@ -1,5 +1,14 @@
 import { AddCircle } from '@mui/icons-material';
-import { Box, Stack, Tab, Tabs } from '@mui/material';
+import {
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Stack,
+  Tab,
+  Tabs,
+} from '@mui/material';
 import {
   useCallback,
   useEffect,
@@ -7,6 +16,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
+import { useSearchParams } from 'react-router';
 
 import { Button, Container } from '@/components';
 import {
@@ -15,6 +25,8 @@ import {
   QuizInfo,
   type QuizDataWithCorrectOptions,
 } from '@/containers';
+import { AiGeneration } from '@/containers/CreateQuiz/AiGeneration';
+import type { CreateQuizPayload } from '@/containers/CreateQuiz/Header/Header.types';
 import { QUESTION_TYPES } from '@/containers/CreateQuiz/QuestionPanel/QuestionPanel.config';
 import { QuizProvider, useQuizContext } from '@/context';
 
@@ -35,8 +47,15 @@ export const TabPanel = ({
 };
 
 const CreateQuiz = ({ quizData }: CreateQuizProps) => {
-  const [activeTab, setActiveTab] = useState<number>(0);
-  const { questions, addQuestion, initCreateForm } = useQuizContext();
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<number>(
+    searchParams.get('mode') === 'ai' ? 1 : 0,
+  );
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedQuiz, setGeneratedQuiz] = useState<CreateQuizPayload | null>(
+    null,
+  );
+  const { quizInfo, questions, addQuestion, initCreateForm } = useQuizContext();
   const isQuestionAdded = useRef<boolean>(false);
   const maxOrder = useRef<number>(0);
 
@@ -71,24 +90,56 @@ const CreateQuiz = ({ quizData }: CreateQuizProps) => {
   );
 
   useEffect(() => {
-    if (questions.length === 0 && !isQuestionAdded.current) {
+    if (!quizData && questions.length === 0 && !isQuestionAdded.current) {
       isQuestionAdded.current = true;
 
       addNewQuestion(maxOrder.current);
     }
-  }, [questions, addNewQuestion]);
+  }, [questions, addNewQuestion, quizData]);
+
+  const applyGeneratedQuiz = (data: CreateQuizPayload) => {
+    initCreateForm({
+      ...data,
+      id: quizInfo.id,
+      totalQuestions: data.questions.length,
+      totalPoints: data.questions.reduce((total, q) => total + q.points, 0),
+    });
+    maxOrder.current = Math.max(...data.questions.map((q) => q.order)) + 1;
+    isQuestionAdded.current = true;
+    setGeneratedQuiz(null);
+    setActiveTab(0);
+  };
+
+  const handleGenerated = (data: CreateQuizPayload) => {
+    const hasContent =
+      !!(
+        quizInfo.title ||
+        quizInfo.description ||
+        quizInfo.category ||
+        quizInfo.complexity ||
+        quizInfo.duration
+      ) ||
+      questions.some(
+        (q) => q.questionText || q.options.some((o) => o.label || o.checked),
+      );
+    if (hasContent) setGeneratedQuiz(data);
+    else applyGeneratedQuiz(data);
+  };
 
   return (
     <Stack gap={12} style={{ padding: 24 }} alignItems="center">
       <Container width="100%">
-        <Header />
+        <Header
+          isEditing={!!quizData}
+          disabled={isGenerating || !!generatedQuiz}
+        />
         <Tabs
           value={activeTab}
           sx={{ mb: 20 }}
           onChange={(_e, index) => setActiveTab(index)}
         >
-          <Tab label="Manual Creation" />
-          <Tab label="AI Generation" />
+          <Tab label="Manual Creation" disabled={isGenerating} />
+          <Tab label="AI Generation" disabled={isGenerating} />
         </Tabs>
         <TabPanel active={activeTab} index={0}>
           <Stack gap={24}>
@@ -108,8 +159,29 @@ const CreateQuiz = ({ quizData }: CreateQuizProps) => {
           </Stack>
         </TabPanel>
         <TabPanel active={activeTab} index={1}>
-          <h3>Tab Panel</h3>
+          <AiGeneration
+            onGenerated={handleGenerated}
+            onBusyChange={setIsGenerating}
+          />
         </TabPanel>
+        <Dialog open={!!generatedQuiz} onClose={() => setGeneratedQuiz(null)}>
+          <DialogTitle>Replace the current quiz content?</DialogTitle>
+          <DialogContent>
+            The generated quiz will replace the questions and details currently
+            in the editor. Nothing is saved until you choose Save Draft or
+            Publish Quiz.
+          </DialogContent>
+          <DialogActions>
+            <Button variant="outlined" onClick={() => setGeneratedQuiz(null)}>
+              Keep Current Quiz
+            </Button>
+            <Button
+              onClick={() => generatedQuiz && applyGeneratedQuiz(generatedQuiz)}
+            >
+              Use Generated Quiz
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </Stack>
   );

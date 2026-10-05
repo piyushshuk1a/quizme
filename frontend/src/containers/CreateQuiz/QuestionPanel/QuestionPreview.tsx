@@ -27,7 +27,7 @@ export const QuestionPreview = ({
   onEdit,
   index,
 }: QuestionPreviewProps) => {
-  const { deleteQuestion } = useQuizContext();
+  const { deleteQuestion, questions } = useQuizContext();
 
   return (
     <Card
@@ -93,6 +93,7 @@ export const QuestionPreview = ({
             variant="outlined"
             color="error"
             startIcon={<Delete />}
+            disabled={questions.length <= 1}
             onClick={() => deleteQuestion(order)}
           >
             Delete

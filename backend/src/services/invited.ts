@@ -59,7 +59,7 @@ export const getInvitedQuizzesForUser = async (
     const invitedQuizzes: Quiz[] = [];
     for (const id of uniqueQuizIds) {
       const q = quizMap.get(id);
-      if (q) invitedQuizzes.push(q);
+      if (q?.isPublished) invitedQuizzes.push(q);
     }
 
     return invitedQuizzes;

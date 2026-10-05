@@ -1,6 +1,16 @@
 import { RemoveRedEye } from '@mui/icons-material';
-import { Box, CircularProgress, Stack, Typography } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useSnackbar } from 'notistack';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { Button } from '@/components';
@@ -9,11 +19,20 @@ import { useQuizContext } from '@/context';
 import { useMutation } from '@/hooks';
 import { pxToRem } from '@/utils';
 
+import { QuestionPreview } from '../QuestionPanel/QuestionPreview';
+
 import { getQuestionsForApi } from './Header.config';
 
 import type { Complexity, CreateQuizPayload } from './Header.types';
 
-export const Header = ({ isEditing = false }: { isEditing?: boolean }) => {
+export const Header = ({
+  isEditing = false,
+  disabled = false,
+}: {
+  isEditing?: boolean;
+  disabled?: boolean;
+}) => {
+  const [previewOpen, setPreviewOpen] = useState(false);
   const {
     quizInfo,
     questions,
@@ -47,7 +66,7 @@ export const Header = ({ isEditing = false }: { isEditing?: boolean }) => {
     });
 
   const validateBeforeSubmitOrPreview = () => {
-    let hasError = false;
+    let hasError = questions.length === 0;
 
     // Validate quiz info and all questions
     const isQuizInfoValid = validateQuizInfo();
@@ -71,6 +90,7 @@ export const Header = ({ isEditing = false }: { isEditing?: boolean }) => {
     if (!validateBeforeSubmitOrPreview()) {
       return;
     }
+    setPreviewOpen(true);
   };
 
   const handleSave = async (shouldPublish?: boolean) => {
@@ -79,8 +99,11 @@ export const Header = ({ isEditing = false }: { isEditing?: boolean }) => {
     }
 
     const quizData = {
-      ...quizInfo,
-      isPublished: shouldPublish,
+      id: quizInfo.id,
+      title: quizInfo.title,
+      description: quizInfo.description,
+      category: quizInfo.category,
+      isPublished: shouldPublish ?? false,
       durationMinutes: parseInt(quizInfo.duration),
       complexity: quizInfo.complexity as Complexity,
       questions: getQuestionsForApi(questions),
@@ -111,22 +134,48 @@ export const Header = ({ isEditing = false }: { isEditing?: boolean }) => {
           color="secondary"
           startIcon={<RemoveRedEye sx={{ fontSize: 16 }} />}
           onClick={handlePreview}
-          disabled={isCreatingQuiz}
+          disabled={disabled || isCreatingQuiz}
         >
           Preview
         </Button>
         <Button
           variant="outlined"
           onClick={() => handleSave()}
-          disabled={isCreatingQuiz}
+          disabled={disabled || isCreatingQuiz}
           sx={{ height: 40 }}
         >
           Save Draft
         </Button>
-        <Button onClick={() => handleSave(true)} disabled={isCreatingQuiz}>
+        <Button
+          onClick={() => handleSave(true)}
+          disabled={disabled || isCreatingQuiz}
+        >
           Publish Quiz
         </Button>
       </Box>
+      <Dialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>{quizInfo.title}</DialogTitle>
+        <DialogContent>
+          <Stack gap={20}>
+            <Typography>{quizInfo.description}</Typography>
+            {questions.map((question, index) => (
+              <QuestionPreview
+                key={question.order}
+                {...question}
+                index={index}
+              />
+            ))}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPreviewOpen(false)}>Close Preview</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

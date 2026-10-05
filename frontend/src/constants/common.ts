@@ -20,6 +20,7 @@ export const API_REQUEST_TYPES = {
 export const API_ENDPOINTS = {
   userRole: '/api/users/:id',
   createQuiz: '/api/quizzes',
+  generateQuiz: '/api/quizzes/generate',
   getQuiz: '/api/quizzes/:id',
   listQuizzes: '/api/quizzes',
   startQuiz: '/api/quizzes/:id/start',

@@ -8,7 +8,7 @@ import {
   type CircularProgressProps,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { generatePath, useParams } from 'react-router';
 
 import { Container } from '@/components';
@@ -16,11 +16,11 @@ import { API_ENDPOINTS } from '@/constants';
 import InvitationsDialog from '@/containers/Quiz/InvitationsDialog';
 import { useRenderQuiz } from '@/context';
 import { useFetch, useMutation } from '@/hooks';
-import { Timer } from '@/utils';
 
 import { AttemptQuiz } from './AttemptQuiz';
 import { CreatedBy } from './CreatedBy';
 import { QuizDetails } from './QuizDetails';
+import { QuizReviewDialog } from './QuizReviewDialog';
 
 import type { QuizAttempt, QuizProps } from './Quiz.types';
 
@@ -28,13 +28,19 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
   const { id } = useParams() as { id: string };
   const { quizInfo, userAnswers, questions } = useRenderQuiz();
   const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [remainingTime, setRemainingTime] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [openInvitationsModal, setOpenInvitationsModal] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const { trigger: startQuiz, isMutating: isStartingQuiz } = useMutation<
-    Record<string, string>
+    Record<string, string>,
+    void,
+    { status: string; startedAt: string }
   >({
     path: generatePath(API_ENDPOINTS.startQuiz, { id }),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setStartedAt(data.startedAt);
       setIsQuizOpen(true);
     },
     onError: () => {
@@ -57,6 +63,7 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
         variant: 'success',
       });
       setIsQuizOpen(false);
+      setStartedAt(null);
       refetchAttempt();
     },
     onError: () => {
@@ -65,33 +72,42 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
       });
     },
   });
-  const timerRef = useRef<undefined | NodeJS.Timeout>(undefined);
-  const [remainingTime, setRemainingTime] = useState('');
-
-  const quizTimer = new Timer(
-    quizInfo.durationMinutes * 60 * 1000,
-    handleSubmit,
-  );
-
-  const handleStartQuiz = () => {
-    startQuiz({});
-    quizTimer.start();
-    timerRef.current = setInterval(() => {
-      setRemainingTime(quizTimer.getFormattedRemainingTime());
-    }, 1000);
-  };
+  const handleSubmit = useCallback(() => {
+    if (isSubmittingQuiz) return;
+    const answers = Object.entries(userAnswers).map(([index, selected]) => ({
+      order: questions[Number(index)].order,
+      selectedOptions: selected,
+    }));
+    submitQuiz({ data: answers });
+  }, [isSubmittingQuiz, userAnswers, questions, submitQuiz]);
+  const submitRef = useRef(handleSubmit);
+  useEffect(() => {
+    submitRef.current = handleSubmit;
+  }, [handleSubmit]);
 
   useEffect(() => {
-    return () => clearInterval(timerRef.current);
-  }, []);
+    if (!startedAt) return;
+    const deadline =
+      new Date(startedAt).getTime() + quizInfo.durationMinutes * 60000;
+    let submitted = false;
+    const tick = () => {
+      const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setRemainingTime(
+        `${Math.floor(seconds / 3600)}:${String(Math.floor(seconds / 60) % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`,
+      );
+      if (seconds === 0 && !submitted) {
+        submitted = true;
+        submitRef.current();
+      }
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [startedAt, quizInfo.durationMinutes]);
 
-  function handleSubmit() {
-    const answers = Object.entries(userAnswers).map(([index, selected]) => {
-      const order = questions[Number(index)].order;
-      return { order, selectedOptions: selected };
-    });
-    submitQuiz({ data: answers });
-  }
+  const handleStartQuiz = () => {
+    if (!isStartingQuiz) startQuiz({});
+  };
 
   // Invitations modal open/close handlers
   const handleOpenInvitations = () => setOpenInvitationsModal(true);
@@ -125,6 +141,7 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
                   <PlayArrow />
                 )
               }
+              disabled={isStartingQuiz || isFetchingAttempt}
               onClick={handleStartQuiz}
               size="medium"
               sx={{ minHeight: 40, px: 3 }}
@@ -141,6 +158,7 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
                 color="primary"
                 variant="contained"
                 startIcon={<Visibility />}
+                onClick={() => setPreviewOpen(true)}
                 size="large"
                 sx={{ minHeight: 48, px: 4 }}
               >
@@ -181,6 +199,11 @@ export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
         onClose={() => setIsQuizOpen(false)}
         onSubmit={handleSubmit}
         isSubmitting={isSubmittingQuiz}
+      />
+
+      <QuizReviewDialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
       />
 
       {/* Invitations modal  */}

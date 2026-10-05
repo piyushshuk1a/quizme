@@ -31,7 +31,7 @@ export const ListQuiz = () => {
 
   useEffect(() => {
     if (activeTabQuery) {
-      setActiveTab(TAB_QUERY_TO_TAB_INDEX[activeTabQuery]);
+      setActiveTab(TAB_QUERY_TO_TAB_INDEX[activeTabQuery] ?? 0);
     }
   }, [activeTabQuery]);
 
@@ -58,6 +58,7 @@ export const ListQuiz = () => {
             color="gradient"
             sx={{ position: 'absolute', right: 0, zIndex: 1 }}
             startIcon={<TipsAndUpdates />}
+            onClick={() => navigate(`${ROUTES.createQuiz}?mode=ai`)}
           >
             AI-Powered Quiz
           </Button>

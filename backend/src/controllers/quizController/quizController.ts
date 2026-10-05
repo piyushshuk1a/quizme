@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 
 import { FIRESTORE_COLLECTIONS, ROLE_NAMESPACE, USER_ROLES } from '@/config';
 import { db } from '@/firebase';
-import { Question } from '@/models';
+import { Question, Quiz } from '@/models';
 import {
   createQuiz,
   getAllPublicQuizzes,
@@ -11,11 +11,13 @@ import {
   getInvitedQuizzesForUser,
   getQuizAttempt,
   getQuizById,
+  getUserById,
   inviteCandidates,
   listInvitedCandidates,
   updateQuizAndQuestions,
   upsertQuizAttempt,
 } from '@/services';
+import { quizSchema, scoreQuiz } from '@/utils/quizValidation';
 
 import {
   CreateQuizBody,
@@ -34,15 +36,12 @@ export const getAllPublicQuizzesController = async (
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    if (invited && !req.query.email) {
-      return res.status(400).json({ message: 'Email is required' });
-    }
-
     let quizzes = {};
     if (myQuizzes) {
       quizzes = await getAllUserQuizzes(req.auth?.payload.sub as string);
     } else if (invited) {
-      quizzes = await getInvitedQuizzesForUser(req.query.email as string);
+      const user = await getUserById(req.auth?.payload.sub as string);
+      quizzes = user ? await getInvitedQuizzesForUser(user.email) : [];
     } else {
       quizzes = await getAllPublicQuizzes(req.auth?.payload?.sub);
     }
@@ -58,53 +57,42 @@ export const createQuizController = async (
   req: Request<unknown, unknown, CreateQuizBody>,
   res: Response,
 ) => {
-  const { questions, ...quizData } = req.body;
+  const { value, error } = quizSchema.validate(req.body, {
+    convert: false,
+    stripUnknown: true,
+  });
+  if (error) return res.status(400).json({ message: error.details[0].message });
+  const { questions, id: bodyId, ...quizData } = value as CreateQuizBody;
   const userId = req.auth?.payload?.sub as string;
+  const routeId = (req.params as { id?: string }).id;
+  if (routeId && bodyId && routeId !== bodyId)
+    return res.status(400).json({ message: 'Quiz ID mismatch.' });
+  const id = routeId ?? bodyId;
   const isPublic = req.auth?.payload?.[ROLE_NAMESPACE] === USER_ROLES.candidate;
-  const totalQuestions = questions.length;
-
-  let totalPoints = 0;
-  for (const q of questions) totalPoints += q.points;
-
-  const finalQuizData = {
-    ...quizData,
-    publishedBy: userId,
-    isPublic,
-    totalPoints,
-    totalQuestions,
-  };
-
   try {
-    let exist = false;
-
-    // Check if quiz exist
-    if (finalQuizData.id) {
-      const quizDocRef = db
+    let existing: Quiz | undefined;
+    if (id) {
+      const doc = await db
         .collection(FIRESTORE_COLLECTIONS.quizzes)
-        .doc(finalQuizData.id);
-      const quizDoc = await quizDocRef.get();
-      exist = quizDoc.exists;
+        .doc(id)
+        .get();
+      if (!doc.exists)
+        return res.status(404).json({ message: 'Quiz not found.' });
+      existing = doc.data() as Quiz;
+      if (existing.publishedBy !== userId)
+        return res
+          .status(403)
+          .json({ message: 'Only the owner can edit this quiz.' });
     }
-
-    // If quiz exist, update the data, otherwise add new
-    if (exist) {
-      updateQuizAndQuestions(
-        finalQuizData.id as string,
-        finalQuizData,
-        questions,
-      );
-    } else
-      await createQuiz(
-        {
-          ...quizData,
-          publishedBy: userId,
-          isPublic,
-          totalPoints,
-          totalQuestions,
-        },
-        questions,
-      );
-
+    const finalQuizData = {
+      ...quizData,
+      publishedBy: userId,
+      isPublic: existing?.isPublic ?? isPublic,
+      totalPoints: questions.reduce((total, q) => total + q.points, 0),
+      totalQuestions: questions.length,
+    };
+    if (id) await updateQuizAndQuestions(id, finalQuizData, questions);
+    else await createQuiz(finalQuizData, questions);
     return res.status(200).json({ status: 'Success' });
   } catch (error) {
     console.error(error);
@@ -121,10 +109,14 @@ export const getQuizByIdController = async (
 
   try {
     const quizAttempt = await getQuizAttempt(userId, id);
-    const quizData = await getQuizById(id, !!quizAttempt, userId);
+    const quizData = await getQuizById(
+      id,
+      quizAttempt?.status === 'completed',
+      userId,
+    );
 
     if (!quizData) {
-      return res.status(200).send({});
+      return res.status(404).json({ message: 'Quiz not found.' });
     }
 
     return res.status(200).json(quizData);
@@ -141,20 +133,26 @@ export const startQuizController = async (req: Request, res: Response) => {
   try {
     const quizAttempt = await getQuizAttempt(userId, id);
     const quizData = await getQuizById(id, true, userId);
+    if (!quizData) return res.status(404).json({ message: 'Quiz not found.' });
+    if (quizAttempt?.status === 'completed')
+      return res.status(409).json({ message: 'Quiz already completed.' });
     const quizAttemptData = {
       quizId: id,
-      userId: userId,
-      maxPossibleScore: quizData?.questions.reduce(
-        (maxScore, curr) => curr.points + maxScore,
+      userId,
+      maxPossibleScore: quizData.questions.reduce(
+        (total, q) => total + q.points,
         0,
       ),
-      startedAt: new Date().toUTCString(),
+      startedAt: quizAttempt?.startedAt ?? new Date().toISOString(),
       status: 'in_progress' as const,
-      ...(quizAttempt ?? {}),
     };
-    await upsertQuizAttempt(quizAttemptData);
-
-    return res.status(200).json({ status: 'Ok' });
+    const attemptRef = await upsertQuizAttempt(quizAttemptData);
+    const savedAttempt = (await attemptRef.get()).data();
+    if (savedAttempt?.status === 'completed')
+      return res.status(409).json({ message: 'Quiz already completed.' });
+    return res
+      .status(200)
+      .json({ status: 'Ok', startedAt: savedAttempt?.startedAt });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Internal Server Error' });
@@ -169,59 +167,32 @@ export const submitQuizController = async (req: Request, res: Response) => {
     const quizAttempt = await getQuizAttempt(userId, id);
     const quizData = await getQuizById(id, true, userId);
 
-    if (!req.body.data)
-      return res.status(400).json({ message: 'Invalid Request' });
-
-    const answers = req.body.data as {
-      order: number;
-      selectedOptions: string[];
-    }[];
-
-    if (!quizData) return res.status(400).json({ message: 'Quiz not found' });
-
-    const correctAnswers: Record<
-      number,
-      { correctOptions: string[]; points: number }
-    > = {}; // map between order and correct options
-
-    for (const quest of quizData.questions) {
-      const { order, correctOptions, points } = quest as Question;
-      correctAnswers[order] = { correctOptions, points };
+    if (!quizData) return res.status(404).json({ message: 'Quiz not found.' });
+    if (!quizAttempt)
+      return res
+        .status(409)
+        .json({ message: 'Start the quiz before submitting.' });
+    if (quizAttempt.status === 'completed')
+      return res.status(409).json({ message: 'Quiz already completed.' });
+    let result;
+    try {
+      result = scoreQuiz(quizData.questions as Question[], req.body?.data);
+      // A small delivery grace lets the browser submit at zero; later submissions receive no credit.
+      const deadline =
+        Date.parse(quizAttempt.startedAt) + quizData.durationMinutes * 60000;
+      if (!Number.isFinite(deadline) || Date.now() > deadline + 30000) {
+        result = scoreQuiz(quizData.questions as Question[], []);
+      }
+    } catch {
+      return res.status(400).json({ message: 'Invalid answers.' });
     }
-
-    const answerData: {
-      order: number;
-      selectedOptions: string[];
-      isCorrect: boolean;
-    }[] = [];
-    let score = 0;
-    const maxPossibleScore = quizData?.questions.reduce(
-      (maxScore, curr) => curr.points + maxScore,
-      0,
-    );
-    for (const ans of answers) {
-      const { order, selectedOptions } = ans;
-      const correctOptions = correctAnswers[order].correctOptions;
-
-      if (
-        correctOptions.length === selectedOptions.length &&
-        correctOptions.every((option) => selectedOptions.includes(option))
-      ) {
-        score += correctAnswers[order].points;
-        answerData.push({ order, selectedOptions, isCorrect: true });
-      } else answerData.push({ order, selectedOptions, isCorrect: false });
-    }
-
     const quizAttemptData = {
-      ...(quizAttempt ?? {}),
+      ...quizAttempt,
+      ...result,
       quizId: id,
-      userId: userId,
-      maxPossibleScore,
-      score,
-      percentage: Math.trunc((score / maxPossibleScore) * 100),
-      completedAt: new Date().toUTCString(),
+      userId,
+      completedAt: new Date().toISOString(),
       status: 'completed' as const,
-      answers: answerData,
     };
     await upsertQuizAttempt(quizAttemptData);
 
@@ -251,19 +222,36 @@ export const inviteCandidatesController = async (
 ) => {
   try {
     const quizId = req.params.id;
-    const { candidates } = req.body as { candidates?: { userEmail: string }[] };
+    const quizDoc = await db
+      .collection(FIRESTORE_COLLECTIONS.quizzes)
+      .doc(quizId)
+      .get();
+    if (!quizDoc.exists)
+      return res.status(404).json({ message: 'Quiz not found.' });
+    if (quizDoc.data()?.publishedBy !== req.auth?.payload.sub)
+      return res
+        .status(403)
+        .json({ message: 'Only the owner can manage invitations.' });
+
+    const { candidates } = (req.body ?? {}) as {
+      candidates?: { userEmail: string }[];
+    };
 
     if (!quizId) {
       return res.status(400).json({ message: 'quiz id is required' });
     }
-    if (!Array.isArray(candidates) || candidates.length === 0) {
+    if (
+      !Array.isArray(candidates) ||
+      candidates.length === 0 ||
+      candidates.length > 200
+    ) {
       return res.status(400).json({ message: 'candidates array is required' });
     }
 
     // Normalize and validate emails
     const normalized = candidates
       .map((c) => ({
-        userEmail: String(c.userEmail || '')
+        userEmail: String(c?.userEmail || '')
           .trim()
           .toLowerCase(),
       }))
@@ -337,6 +325,17 @@ export const listInvitedCandidatesController = async (
 ) => {
   try {
     const quizId = req.params.id;
+    const quizDoc = await db
+      .collection(FIRESTORE_COLLECTIONS.quizzes)
+      .doc(quizId)
+      .get();
+    if (!quizDoc.exists)
+      return res.status(404).json({ message: 'Quiz not found.' });
+    if (quizDoc.data()?.publishedBy !== req.auth?.payload.sub)
+      return res
+        .status(403)
+        .json({ message: 'Only the owner can manage invitations.' });
+
     if (!quizId) return res.status(400).json({ message: 'quiz id required' });
 
     const invited = await listInvitedCandidates(quizId);

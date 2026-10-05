@@ -4,6 +4,8 @@ import Joi from 'joi';
 const envSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
   PORT: Joi.number().default(8000),
+  OPENAI_API_KEY: Joi.string().trim().allow('').optional(),
+  OPENAI_MODEL: Joi.string().trim().default('gpt-4o-mini'),
   FIRESTORE_PRIVATE_KEY: Joi.string().required(),
   FIRESTORE_CLIENT_EMAIL: Joi.string().email().required(),
   FIRESTORE_PROJECT_ID: Joi.string().required(),
@@ -29,6 +31,8 @@ if (error) {
 export const config = {
   nodeEnv: envVars.NODE_ENV as 'development' | 'production' | 'test',
   port: envVars.PORT as number,
+  openaiApiKey: envVars.OPENAI_API_KEY as string | undefined,
+  openaiModel: envVars.OPENAI_MODEL as string,
   firestorePrivateKey: (envVars.FIRESTORE_PRIVATE_KEY as string).replace(
     /\\n/g,
     '\n',

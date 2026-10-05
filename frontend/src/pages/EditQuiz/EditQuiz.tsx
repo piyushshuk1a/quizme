@@ -4,11 +4,12 @@ import { generatePath, useParams } from 'react-router';
 import { DataNotAvailable, Error, ScreenCenter } from '@/components';
 import { API_ENDPOINTS } from '@/constants';
 import type { QuizDataWithCorrectOptions } from '@/containers';
-import { useFetch } from '@/hooks';
+import { useFetch, useUserInfo } from '@/hooks';
 
 import CreateQuizWithProvider from '../CreateQuiz';
 
 export const EditQuiz = () => {
+  const { id: userId } = useUserInfo();
   const { id } = useParams() as { id: string };
   const { isLoading, data, error, isValidating } = useFetch<
     QuizDataWithCorrectOptions,
@@ -39,6 +40,10 @@ export const EditQuiz = () => {
 
   if (!data) {
     return <DataNotAvailable message="Quiz not found" />;
+  }
+
+  if (data.publishedBy !== userId) {
+    return <Error message="Only the owner can edit this quiz." />;
   }
 
   return <CreateQuizWithProvider quizData={data} />;
