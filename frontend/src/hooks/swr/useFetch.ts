@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import { API_REQUEST_TYPES } from '@/constants';
 import { pathBuilder } from '@/utils';
 
+import { readApiResponse } from './apiResponse';
 import { type GenericParams, type UseFetchArgs } from './swr.types';
 
 /**
@@ -34,12 +35,7 @@ const fetcher = async <TResponse = unknown>(
       },
     });
 
-    if (!response.ok) {
-      throw await response.json();
-    }
-
-    const data = (await response.json()) as TResponse;
-    return data;
+    return await readApiResponse<TResponse>(response);
   } catch (err) {
     console.error(err);
 
