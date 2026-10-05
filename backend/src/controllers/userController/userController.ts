@@ -14,6 +14,10 @@ import { CreateUserRequest } from './userController.types';
 
 export const createUser = async (req: CreateUserRequest, res: Response) => {
   const { id } = req.params;
+  if (id !== req.auth?.payload.sub)
+    return res
+      .status(403)
+      .json({ message: 'You can only update your own profile.' });
   const { role, email, firstName, lastName } = req.body;
 
   // Validate the role

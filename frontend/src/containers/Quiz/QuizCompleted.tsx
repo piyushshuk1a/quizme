@@ -1,14 +1,17 @@
 import { Visibility } from '@mui/icons-material';
 import { Box, Button, Stack, Typography } from '@mui/material';
+import { useState } from 'react';
 
 import { Container } from '@/components';
 import { useRenderQuiz } from '@/context';
 
 import { CreatedBy } from './CreatedBy';
 import { QuizDetails } from './QuizDetails';
+import { QuizReviewDialog } from './QuizReviewDialog';
 import { YourAttempt } from './YourAttempt';
 
 export const QuizCompleted = () => {
+  const [reviewOpen, setReviewOpen] = useState(false);
   const { quizInfo } = useRenderQuiz();
 
   return (
@@ -27,6 +30,7 @@ export const QuizCompleted = () => {
             color="primary"
             variant="contained"
             startIcon={<Visibility />}
+            onClick={() => setReviewOpen(true)}
           >
             Review Answers
           </Button>
@@ -40,6 +44,11 @@ export const QuizCompleted = () => {
             <CreatedBy />
           </Stack>
         </Box>
+        <QuizReviewDialog
+          open={reviewOpen}
+          onClose={() => setReviewOpen(false)}
+          review
+        />
       </Container>
     </Box>
   );

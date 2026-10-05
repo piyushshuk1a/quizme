@@ -15,9 +15,8 @@ export const createQuiz = async (
 ): Promise<Quiz> => {
   try {
     const quizDocRef = db.collection(FIRESTORE_COLLECTIONS.quizzes).doc();
-    await quizDocRef.set(quizData);
-
     const batch = db.batch();
+    batch.set(quizDocRef, quizData);
     const questionsCollectionRef = quizDocRef.collection(
       FIRESTORE_COLLECTIONS.questions,
     );
@@ -93,6 +92,24 @@ export const getQuizById = async (
     if (!quizDoc.exists) {
       console.warn(`Quiz with ID "${quizId}" not found.`);
       return null;
+    }
+
+    const storedQuiz = quizDoc.data() as Quiz;
+    if (storedQuiz.publishedBy !== userId) {
+      if (!storedQuiz.isPublished) return null;
+      if (!storedQuiz.isPublic) {
+        const userDoc = await db
+          .collection(FIRESTORE_COLLECTIONS.users)
+          .doc(userId)
+          .get();
+        const email = normalizeEmail(userDoc.data()?.email ?? '');
+        if (!email) return null;
+        const invitation = await quizDocRef
+          .collection(FIRESTORE_COLLECTIONS.invited)
+          .doc(getInviteSafeId(email))
+          .get();
+        if (!invitation.exists) return null;
+      }
     }
 
     // Fetch questions from the 'questions' sub-collection
@@ -177,7 +194,8 @@ export const getAllPublicQuizzes = async (
 
     const quizzes: Quiz[] = [];
     quizzesSnapshot.forEach((doc) => {
-      quizzes.push({ id: doc.id, ...(doc.data() as Quiz) });
+      const quiz = doc.data() as Quiz;
+      if (quiz.isPublished) quizzes.push({ ...quiz, id: doc.id });
     });
 
     return quizzes;

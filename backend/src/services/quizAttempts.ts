@@ -20,24 +20,23 @@ export const upsertQuizAttempt = async (
     .collection(FIRESTORE_COLLECTIONS.quizAttempts)
     .doc(`${userId}_${quizId}`); // Using a composite ID for simplicity
 
-  // Prepare the data to be set/merged
-  const preparedData: Partial<QuizAttempt> = {
-    userId,
-    quizId,
-    ...dataToUpdate,
-  };
-
-  if (
-    !dataToUpdate.startedAt &&
-    !quizAttemptRef.get().then((doc) => doc.exists)
-  ) {
-    preparedData.startedAt = new Date().toUTCString();
-  }
-  if (!dataToUpdate.status) {
-    preparedData.status = 'in_progress';
-  }
-
-  await quizAttemptRef.set(preparedData, { merge: true });
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(quizAttemptRef);
+    const existing = snapshot.data() as QuizAttempt | undefined;
+    // Concurrent starts must not reset the clock, and a submitted score is final.
+    if (existing?.status === 'completed') return;
+    const preparedData: Partial<QuizAttempt> = {
+      ...dataToUpdate,
+      userId,
+      quizId,
+      startedAt:
+        existing?.startedAt ??
+        dataToUpdate.startedAt ??
+        new Date().toISOString(),
+      status: dataToUpdate.status ?? existing?.status ?? 'in_progress',
+    };
+    transaction.set(quizAttemptRef, preparedData, { merge: true });
+  });
 
   return quizAttemptRef;
 };

@@ -16,7 +16,7 @@ export interface QuizData {
   durationMinutes: number;
   totalQuestions: number;
   questions: Array<
-    Omit<Question, 'correctOptions'> & { correctOptions?: string }
+    Omit<Question, 'correctOptions'> & { correctOptions?: string[] }
   >;
 }
 

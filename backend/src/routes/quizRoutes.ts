@@ -10,11 +10,14 @@ import {
   inviteCandidatesController,
   listInvitedCandidatesController,
 } from '@/controllers';
+import { generateQuizController } from '@/controllers/quizController/generateQuizController';
 import { checkJwt, decodeToken } from '@/middlewares';
+import { createAiRateLimit } from '@/middlewares/aiRateLimit';
 
 const router = express.Router();
 
 router.get('/', decodeToken, getAllPublicQuizzesController); // Get all public quizzes
+router.post('/generate', checkJwt, createAiRateLimit(), generateQuizController);
 router.post('/', checkJwt, createQuizController); // Create Quiz
 
 router.get('/:id', checkJwt, getQuizByIdController); // Get Quiz

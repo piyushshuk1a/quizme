@@ -1,9 +1,4 @@
-import {
-  AccessTime,
-  FormatListNumbered,
-  Save,
-  Warning,
-} from '@mui/icons-material';
+import { AccessTime, FormatListNumbered, Warning } from '@mui/icons-material';
 import {
   Box,
   Card,
@@ -65,11 +60,15 @@ export const AttemptQuizSidebar = () => {
     quizInfo,
   } = useRenderQuiz();
 
+  const answeredCount = Object.values(userAnswers).filter(
+    (answer) => answer.length > 0,
+  ).length;
+
   const getBtnStyles = (index: number): SxProps => {
     const btnType =
       index === currentQuestionIndex
         ? QUESTION_STATES.current
-        : userAnswers[index]
+        : userAnswers[index]?.length
           ? QUESTION_STATES.answered
           : QUESTION_STATES.unanswered;
 
@@ -129,10 +128,6 @@ export const AttemptQuizSidebar = () => {
             icon={<Warning sx={{ fontSize: pxToRem(16), color: '#EAB308' }} />}
             text={`You can navigate freely between questions.`}
           />
-          <InfoItem
-            icon={<Save sx={{ fontSize: pxToRem(16), color: '#16A34A' }} />}
-            text={`Progress is automatically saved.`}
-          />
         </Card>
       </Stack>
       <Stack gap={16}>
@@ -140,6 +135,7 @@ export const AttemptQuizSidebar = () => {
         <Box display="flex" gap={12} flexWrap="wrap">
           {Array.from({ length: questions.length }).map((_, index) => (
             <Button
+              key={index}
               variant="contained"
               onClick={() => goToQuestion(index)}
               sx={getBtnStyles(index)}
@@ -168,14 +164,10 @@ export const AttemptQuizSidebar = () => {
             background: '#4B5563',
           }}
           variant="determinate"
-          value={
-            ((Object.keys(userAnswers).length ?? 0) / quizInfo.totalQuestions) *
-            100
-          }
+          value={(answeredCount / Math.max(1, quizInfo.totalQuestions)) * 100}
         />
         <Typography sx={{ opacity: 0.5 }}>
-          {Object.keys(userAnswers).length} of {quizInfo.totalQuestions}{' '}
-          questions answered
+          {answeredCount} of {quizInfo.totalQuestions} questions answered
         </Typography>
       </Card>
     </Stack>
