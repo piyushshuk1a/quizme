@@ -7,7 +7,7 @@ const envSchema = Joi.object({
   OPENAI_API_KEY: Joi.string().trim().allow('').optional(),
   OPENAI_MODEL: Joi.string().trim().default('gpt-4o-mini'),
   GEMINI_API_KEY: Joi.string().trim().allow('').optional(),
-  GEMINI_MODEL: Joi.string().trim().default('gemini-2.5-flash'),
+  GEMINI_MODEL: Joi.string().trim().default('gemini-3.8-flash'),
   // Which configured provider to use for AI generation. Defaults to Gemini
   // when GEMINI_API_KEY is set, otherwise OpenAI.
   AI_PROVIDER: Joi.string().valid('openai', 'gemini').optional(),
