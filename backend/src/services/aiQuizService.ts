@@ -88,6 +88,17 @@ export async function generateQuiz(
       }),
     });
     if (!response.ok) {
+      // Log the provider's status and error code server-side (never the key
+      // or the raw body) so configuration problems can be diagnosed.
+      const details = (await response.json().catch(() => undefined)) as
+        | { error?: { type?: string; code?: string; message?: string } }
+        | undefined;
+      console.error(
+        `OpenAI request failed: HTTP ${response.status}` +
+          (details?.error?.code ? ` code=${details.error.code}` : '') +
+          (details?.error?.type ? ` type=${details.error.type}` : '') +
+          (details?.error?.message ? ` message=${details.error.message}` : ''),
+      );
       throw new GenerationError(
         response.status === 429 ? 429 : 502,
         response.status === 429
