@@ -14,10 +14,20 @@ export const generateQuizController = async (req: Request, res: Response) => {
   });
   if (error) return res.status(400).json({ message: error.details[0].message });
   try {
-    const quiz = await generateQuiz(value as GenerationRequest, {
-      apiKey: config.openaiApiKey,
-      model: config.openaiModel,
-    });
+    const quiz = await generateQuiz(
+      value as GenerationRequest,
+      config.aiProvider === 'gemini'
+        ? {
+            provider: 'gemini',
+            apiKey: config.geminiApiKey,
+            model: config.geminiModel,
+          }
+        : {
+            provider: 'openai',
+            apiKey: config.openaiApiKey,
+            model: config.openaiModel,
+          },
+    );
     return res.status(200).json(quiz);
   } catch (error) {
     if (error instanceof GenerationError)

@@ -85,6 +85,70 @@ test('AI request keeps credentials server-side and returns an editable, unsaved 
   assert.equal(quizSchema.validate(quiz).error, undefined);
 });
 
+test('Gemini provider sends a JSON schema request and returns the same editable quiz', async () => {
+  const gemini = { provider: 'gemini' as const, apiKey: 'g-key', model: 'gm' };
+  const quiz = await generateQuiz(request, gemini, async (url, options) => {
+    assert.equal(
+      url,
+      'https://generativelanguage.googleapis.com/v1beta/models/gm:generateContent',
+    );
+    const headers = options?.headers as Record<string, string>;
+    assert.equal(headers['x-goog-api-key'], 'g-key');
+    assert.equal(headers.Authorization, undefined);
+    const body = JSON.parse(options?.body as string);
+    assert.equal(body.contents[0].parts[0].text, request.prompt);
+    assert.equal(body.generationConfig.responseMimeType, 'application/json');
+    assert.equal(
+      JSON.stringify(body.generationConfig.responseSchema).includes(
+        'additionalProperties',
+      ),
+      false,
+    );
+    return new Response(
+      JSON.stringify({
+        candidates: [
+          {
+            finishReason: 'STOP',
+            content: { parts: [{ text: JSON.stringify(generated) }] },
+          },
+        ],
+      }),
+    );
+  });
+  assert.equal(quiz.title, generated.title);
+  assert.deepEqual(quiz.questions[0].correctOptions, ['a']);
+  await assert.rejects(
+    generateQuiz(request, gemini, reply({ error: { code: 400 } }, 400)),
+    hasStatus(502),
+  );
+  await assert.rejects(
+    generateQuiz(request, gemini, reply({ error: {} }, 429)),
+    hasStatus(429),
+  );
+  await assert.rejects(
+    generateQuiz(
+      request,
+      gemini,
+      reply({ promptFeedback: { blockReason: 'SAFETY' }, candidates: [] }),
+    ),
+    hasStatus(422),
+  );
+  await assert.rejects(
+    generateQuiz(
+      request,
+      gemini,
+      reply({ candidates: [{ finishReason: 'MAX_TOKENS', content: {} }] }),
+    ),
+    hasStatus(502),
+  );
+  await assert.rejects(
+    generateQuiz(request, { provider: 'gemini', model: 'gm' }, async () => {
+      throw new Error('Must not call');
+    }),
+    hasStatus(503),
+  );
+});
+
 test('missing key does not call the provider', async () => {
   await assert.rejects(
     generateQuiz(request, { model: 'test' }, async () => {

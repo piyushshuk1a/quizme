@@ -94,10 +94,14 @@ You can use the .env.example file as a reference.
 
 ## AI quiz generation
 
-Set `OPENAI_API_KEY` in the **backend** environment and restart the backend.
-`OPENAI_MODEL` defaults to `gpt-4o-mini`; an override must support the Responses API
-and strict JSON Schema output. Never put the key in a `VITE_` variable or commit it.
-An empty key leaves manual quiz creation available and returns a helpful 503 from AI generation.
+Set either `OPENAI_API_KEY` or `GEMINI_API_KEY` in the **backend** environment and
+restart the backend. `OPENAI_MODEL` defaults to `gpt-4o-mini` (an override must support
+the Responses API and strict JSON Schema output); `GEMINI_MODEL` defaults to
+`gemini-2.5-flash` (an override must support JSON response schemas). When both keys are
+set, Gemini is used unless `AI_PROVIDER=openai`. Never put a key in a `VITE_` variable or
+commit it. With no key configured, manual quiz creation stays available and AI
+generation returns a helpful 503. Provider failures are logged server-side as
+`<Provider> request failed: HTTP <status> code=...` to aid diagnosis.
 
 Signed-in users can open **Create New Quiz → AI Generation**, enter a prompt,
 choose 1–20 questions and a difficulty, then select **Generate Quiz**. Questions,

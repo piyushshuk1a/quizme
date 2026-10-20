@@ -6,6 +6,11 @@ const envSchema = Joi.object({
   PORT: Joi.number().default(8000),
   OPENAI_API_KEY: Joi.string().trim().allow('').optional(),
   OPENAI_MODEL: Joi.string().trim().default('gpt-4o-mini'),
+  GEMINI_API_KEY: Joi.string().trim().allow('').optional(),
+  GEMINI_MODEL: Joi.string().trim().default('gemini-2.5-flash'),
+  // Which configured provider to use for AI generation. Defaults to Gemini
+  // when GEMINI_API_KEY is set, otherwise OpenAI.
+  AI_PROVIDER: Joi.string().valid('openai', 'gemini').optional(),
   FIRESTORE_PRIVATE_KEY: Joi.string().required(),
   FIRESTORE_CLIENT_EMAIL: Joi.string().email().required(),
   FIRESTORE_PROJECT_ID: Joi.string().required(),
@@ -33,6 +38,10 @@ export const config = {
   port: envVars.PORT as number,
   openaiApiKey: envVars.OPENAI_API_KEY as string | undefined,
   openaiModel: envVars.OPENAI_MODEL as string,
+  geminiApiKey: envVars.GEMINI_API_KEY as string | undefined,
+  geminiModel: envVars.GEMINI_MODEL as string,
+  aiProvider: (envVars.AI_PROVIDER ??
+    (envVars.GEMINI_API_KEY ? 'gemini' : 'openai')) as 'openai' | 'gemini',
   firestorePrivateKey: (envVars.FIRESTORE_PRIVATE_KEY as string).replace(
     /\\n/g,
     '\n',
