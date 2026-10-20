@@ -183,9 +183,10 @@ before(async () => {
       } as NonNullable<typeof req.auth>;
     next();
   });
-  app.post('/generate', createAiRateLimit(), (_req, res) =>
-    res.json({ ok: true }),
-  );
+  const aiRateLimit = createAiRateLimit();
+  app.post('/generate', aiRateLimit, (_req, res) => res.json({ ok: true }));
+  // Never responds: used to simulate a client disconnecting mid-generation
+  app.post('/generate-hang', aiRateLimit, () => {});
   app.get('/quizzes', controllers.getAllPublicQuizzesController);
   app.post('/quizzes', controllers.createQuizController);
   app.put('/quizzes/:id', controllers.createQuizController);
@@ -377,6 +378,81 @@ test('late submissions get zero credit and transaction preserves completed score
   assert.equal(records.get(`${constants.quizAttempts}/late_quiz`).score, 0);
   await upsert({ userId: 'new', quizId: 'quiz' });
   assert.ok(records.get(`${constants.quizAttempts}/new_quiz`).startedAt);
+});
+
+test('owners cannot attempt their own quiz and drafts cannot be started', async () => {
+  seed();
+  seed('draft', false);
+  assert.equal((await request('/quizzes/quiz/start', 'POST', {})).status, 403);
+  assert.equal(
+    (await request('/quizzes/draft/start', 'POST', {}, 'candidate')).status,
+    404,
+  );
+  assert.equal(records.has(`${constants.quizAttempts}/owner_quiz`), false);
+});
+
+test('submitting marks an existing invitation as attempted with the score', async () => {
+  seed();
+  records.set(`${constants.users}/invitee`, {
+    userId: 'invitee',
+    email: 'Invitee@Example.com',
+  });
+  const safeId = encodeURIComponent('invitee@example.com');
+  const perQuizPath = `${constants.quizzes}/quiz/${constants.invited}/${safeId}`;
+  const globalPath = `${constants.invited}/quiz_${safeId}`;
+  for (const path of [perQuizPath, globalPath])
+    records.set(path, {
+      userEmail: 'invitee@example.com',
+      quizId: 'quiz',
+      status: 'invite_sent',
+      invitedAt: 'original',
+    });
+  assert.equal(
+    (await request('/quizzes/quiz/start', 'POST', {}, 'invitee')).status,
+    200,
+  );
+  assert.equal(
+    (
+      await request(
+        '/quizzes/quiz/submit',
+        'POST',
+        { data: [{ order: 0, selectedOptions: ['a'] }] },
+        'invitee',
+      )
+    ).status,
+    200,
+  );
+  for (const path of [perQuizPath, globalPath]) {
+    assert.equal(records.get(path).status, 'attempted');
+    assert.equal(records.get(path).obtainedPoints, 1);
+    assert.equal(records.get(path).invitedAt, 'original');
+  }
+  // Users without an invitation never get an invitation record created
+  records.set(`${constants.users}/walkin`, { email: 'walkin@example.com' });
+  await request('/quizzes/quiz/start', 'POST', {}, 'walkin');
+  await request('/quizzes/quiz/submit', 'POST', { data: [] }, 'walkin');
+  assert.equal(
+    records.has(
+      `${constants.quizzes}/quiz/${constants.invited}/${encodeURIComponent('walkin@example.com')}`,
+    ),
+    false,
+  );
+});
+
+test('AI limiter releases the in-flight slot when the client disconnects', async () => {
+  const controller = new AbortController();
+  const hung = fetch(`${base}/generate-hang`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Test-User': 'leaver' },
+    body: '{}',
+    signal: controller.signal,
+  }).catch(() => undefined);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal((await request('/generate', 'POST', {}, 'leaver')).status, 429);
+  controller.abort();
+  await hung;
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  assert.equal((await request('/generate', 'POST', {}, 'leaver')).status, 200);
 });
 
 test('AI limiter rejects unauthenticated and excessive requests', async () => {

@@ -11,6 +11,7 @@ export const createStore = <TStore extends Record<string, unknown>>(
 ) =>
   create<TStore>()(
     devtools<TStore>(getStore, {
-      enabled: import.meta.env.NODE_ENV === 'development',
+      // Vite exposes DEV/MODE (not NODE_ENV) on import.meta.env
+      enabled: import.meta.env.DEV,
     }),
   );

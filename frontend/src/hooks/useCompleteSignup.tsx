@@ -15,6 +15,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { useCallback, useEffect, useState } from 'react';
 import { generatePath } from 'react-router';
 
@@ -40,20 +41,35 @@ export const useCompleteSignup = () => {
   const { isAuthenticated, user, getAccessTokenWithPopup } = useAuth0();
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRoles>();
-  const { trigger: completeSignup, isMutating: isUpdatingRole } =
-    useMutation<CompleteSignupPayload>({
-      path: user
-        ? generatePath(API_ENDPOINTS.userRole, { id: user.sub ?? '' })
-        : '',
-      method: API_REQUEST_TYPES.put,
-      onSuccess: async () => {
+  const { enqueueSnackbar } = useSnackbar();
+  const { trigger: completeSignup, isMutating: isUpdatingRole } = useMutation<
+    CompleteSignupPayload,
+    void,
+    object,
+    unknown,
+    unknown,
+    true
+  >({
+    path: user
+      ? generatePath(API_ENDPOINTS.userRole, { id: user.sub ?? '' })
+      : null,
+    method: API_REQUEST_TYPES.put,
+    // Reject on failure so the dialog stays open instead of silently closing
+    throwOnError: true,
+    onSuccess: async () => {
+      try {
         await getAccessTokenWithPopup({
           authorizationParams: {
             audience: import.meta.env.VITE_AUTH0_AUDIENCE,
           },
         }); // Force token refresh to get the updated role in the ID token
-      },
-    });
+      } catch (error) {
+        // The profile was saved; the role claim will be picked up on the
+        // next login if the popup was blocked or closed.
+        console.error('Could not refresh the session after sign up:', error);
+      }
+    },
+  });
   const { role: signUpRole } = useSignupRole();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -87,7 +103,16 @@ export const useCompleteSignup = () => {
   }, [syncUser]);
 
   const handleRoleSelection = (role: UserRoles) => {
-    handleUpdateRole(role).then(() => setIsRoleDialogOpen(false));
+    handleUpdateRole(role)
+      .then(() => setIsRoleDialogOpen(false))
+      .catch((error: unknown) => {
+        enqueueSnackbar(
+          typeof error === 'string'
+            ? error
+            : 'Could not complete your sign up. Please try again.',
+          { variant: 'error' },
+        );
+      });
   };
 
   const activeBorderCandidate = '1px solid #8B5CF6';

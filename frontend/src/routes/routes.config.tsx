@@ -8,6 +8,7 @@ const Quiz = React.lazy(() => import('@/pages/Quiz'));
 const ListQuiz = React.lazy(() => import('@/pages/ListQuiz'));
 const EditQuiz = React.lazy(() => import('@/pages/EditQuiz'));
 const CallbackHandler = React.lazy(() => import('@/pages/CallbackHandler'));
+const NotFound = React.lazy(() => import('@/pages/NotFound'));
 
 export const ROUTES_CONFIG: RouteConfigItem[] = [
   { path: '/', element: <Home />, isGuarded: false },
@@ -34,6 +35,12 @@ export const ROUTES_CONFIG: RouteConfigItem[] = [
   {
     path: ROUTES.callback,
     element: <CallbackHandler />,
+    isGuarded: false,
+  },
+  // Fallback for unknown URLs so users never land on a blank screen
+  {
+    path: ROUTES.notFound,
+    element: <NotFound />,
     isGuarded: false,
   },
 ];

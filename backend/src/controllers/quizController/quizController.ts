@@ -14,6 +14,7 @@ import {
   getUserById,
   inviteCandidates,
   listInvitedCandidates,
+  markInvitationAttempted,
   updateQuizAndQuestions,
   upsertQuizAttempt,
 } from '@/services';
@@ -134,6 +135,12 @@ export const startQuizController = async (req: Request, res: Response) => {
     const quizAttempt = await getQuizAttempt(userId, id);
     const quizData = await getQuizById(id, true, userId);
     if (!quizData) return res.status(404).json({ message: 'Quiz not found.' });
+    if (quizData.publishedBy === userId)
+      return res
+        .status(403)
+        .json({ message: 'Quiz owners cannot attempt their own quiz.' });
+    if (!quizData.isPublished)
+      return res.status(404).json({ message: 'Quiz not found.' });
     if (quizAttempt?.status === 'completed')
       return res.status(409).json({ message: 'Quiz already completed.' });
     const quizAttemptData = {
@@ -194,7 +201,15 @@ export const submitQuizController = async (req: Request, res: Response) => {
       completedAt: new Date().toISOString(),
       status: 'completed' as const,
     };
-    await upsertQuizAttempt(quizAttemptData);
+    const attemptRef = await upsertQuizAttempt(quizAttemptData);
+    const savedAttempt = (await attemptRef.get()).data();
+
+    // Best effort: reflect the attempt on the invitation record (if invited).
+    try {
+      await markInvitationAttempted(id, userId, savedAttempt?.score ?? 0);
+    } catch (error) {
+      console.error('Could not update invitation status:', error);
+    }
 
     return res.status(200).json({ status: 'Ok' });
   } catch (error) {

@@ -92,7 +92,9 @@ export const HeroSection = () => {
           </Box>
         )}
         {isAuthenticated && (
-          <Link to={ROUTES.createQuiz}>
+          <Link
+            to={role === USER_ROLES.admin ? ROUTES.createQuiz : ROUTES.listQuiz}
+          >
             <Button
               size="large"
               color="gradient"
