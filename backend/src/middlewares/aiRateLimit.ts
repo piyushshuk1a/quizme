@@ -34,9 +34,14 @@ export function createAiRateLimit() {
     entry.count++;
     entry.active = true;
     users.set(userId, entry);
-    res.once('finish', () => {
+    // Release the in-flight slot however the response ends. Listening only
+    // to 'finish' left the user permanently locked out (429 until restart)
+    // when the client disconnected before the AI response was written.
+    const release = () => {
       entry.active = false;
-    });
+    };
+    res.once('finish', release);
+    res.once('close', release);
     next();
   };
 }

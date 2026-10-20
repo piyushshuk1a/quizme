@@ -186,16 +186,18 @@ export const getAllPublicQuizzes = async (
   currentUser?: string,
 ): Promise<Quiz[]> => {
   try {
+    // Only equality filters are used so the query works without a composite
+    // index; the current user's own quizzes and drafts are filtered here.
     const quizzesSnapshot = await db
       .collection(FIRESTORE_COLLECTIONS.quizzes)
       .where('isPublic', '==', true)
-      .where('publishedBy', '!=', currentUser ?? '')
       .get();
 
     const quizzes: Quiz[] = [];
     quizzesSnapshot.forEach((doc) => {
       const quiz = doc.data() as Quiz;
-      if (quiz.isPublished) quizzes.push({ ...quiz, id: doc.id });
+      if (quiz.isPublished && quiz.publishedBy !== currentUser)
+        quizzes.push({ ...quiz, id: doc.id });
     });
 
     return quizzes;
@@ -279,11 +281,11 @@ export const updateInvitedCandidate = async (
 
     const batch = db.batch();
 
+    // Keep the original invitedAt; updates only change status/points.
     const payload: admin.firestore.DocumentData = {
       ...updates,
       userEmail: emailNormalized,
       quizId,
-      invitedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     batch.set(perQuizRef, payload, { merge: true });
@@ -294,6 +296,36 @@ export const updateInvitedCandidate = async (
     console.error('updateInvitedCandidate error', err);
     throw err;
   }
+};
+
+/**
+ * Records a completed attempt on the candidate's invitation (if the user was
+ * invited to the quiz) so invitation records reflect `attempted` + points.
+ */
+export const markInvitationAttempted = async (
+  quizId: string,
+  userId: string,
+  obtainedPoints: number,
+): Promise<void> => {
+  const userDoc = await db
+    .collection(FIRESTORE_COLLECTIONS.users)
+    .doc(userId)
+    .get();
+  const email = normalizeEmail(userDoc.data()?.email ?? '');
+  if (!email) return;
+
+  const invitation = await db
+    .collection(FIRESTORE_COLLECTIONS.quizzes)
+    .doc(quizId)
+    .collection(FIRESTORE_COLLECTIONS.invited)
+    .doc(getInviteSafeId(email))
+    .get();
+  if (!invitation.exists) return;
+
+  await updateInvitedCandidate(quizId, email, {
+    status: 'attempted',
+    obtainedPoints,
+  });
 };
 
 type InvitedWithId = Invited & { id: string };

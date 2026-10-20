@@ -29,10 +29,13 @@ export const ListQuiz = () => {
   const [activeTab, setActiveTab] = useState(0);
   const navigate = useNavigate();
 
+  // Keep the selected tab in sync with the URL (also when navigating to
+  // "/quiz" without a tab query, e.g. via the navbar or browser history).
   useEffect(() => {
-    if (activeTabQuery) {
-      setActiveTab(TAB_QUERY_TO_TAB_INDEX[activeTabQuery] ?? 0);
-    }
+    const tabIndex = activeTabQuery
+      ? TAB_QUERY_TO_TAB_INDEX[activeTabQuery]
+      : undefined;
+    setActiveTab(tabIndex ?? 0);
   }, [activeTabQuery]);
 
   const handleTabChange = (index: number) => {

@@ -5,4 +5,5 @@ export const ROUTES = {
   listQuiz: '/quiz',
   editQuiz: '/quiz/:id/edit',
   callback: '/callback',
+  notFound: '*',
 } as const;

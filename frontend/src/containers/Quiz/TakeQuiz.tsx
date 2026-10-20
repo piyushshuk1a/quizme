@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { generatePath, useParams } from 'react-router';
+import { generatePath, useParams, useSearchParams } from 'react-router';
 
 import { Container } from '@/components';
 import { API_ENDPOINTS } from '@/constants';
@@ -26,12 +26,16 @@ import type { QuizAttempt, QuizProps } from './Quiz.types';
 
 export const TakeQuiz = ({ isOwner }: Omit<QuizProps, 'isCompleted'>) => {
   const { id } = useParams() as { id: string };
+  const [searchParams] = useSearchParams();
   const { quizInfo, userAnswers, questions } = useRenderQuiz();
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [startedAt, setStartedAt] = useState<string | null>(null);
   const [remainingTime, setRemainingTime] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [openInvitationsModal, setOpenInvitationsModal] = useState(false);
+  // "Invite Candidate" from the quiz list links here with ?tab=invitations
+  const [openInvitationsModal, setOpenInvitationsModal] = useState(
+    isOwner && searchParams.get('tab') === 'invitations',
+  );
   const { enqueueSnackbar } = useSnackbar();
   const { trigger: startQuiz, isMutating: isStartingQuiz } = useMutation<
     Record<string, string>,

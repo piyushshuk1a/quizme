@@ -56,7 +56,13 @@ const CardItem = ({ text, icon }: { text: string; icon: ReactNode }) => (
 
 export const Features = () => {
   return (
-    <Box display="flex" justifyContent="center" padding={80} bgcolor="#1E293B">
+    <Box
+      id="features"
+      display="flex"
+      justifyContent="center"
+      padding={80}
+      bgcolor="#1E293B"
+    >
       <Container display="flex" flexDirection="column" gap={60}>
         <Stack sx={{ textAlign: 'center', gap: 12 }}>
           <Typography component="h2" variant="h4">

@@ -15,7 +15,11 @@ export const QuestionHeader = () => {
     [QUESTION_TYPES.singleSelect]: 'Multiple Choice Question',
   };
   const question = questions[currentQuestionIndex];
-  const answeredQuestions = Object.keys(userAnswers).length;
+  // Only count questions that still have a selection (a cleared multi-select
+  // answer is an empty array), matching the sidebar's progress logic.
+  const answeredQuestions = Object.values(userAnswers).filter(
+    (answer) => answer.length > 0,
+  ).length;
 
   return (
     <Stack width="100%" gap={12}>

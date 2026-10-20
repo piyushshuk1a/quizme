@@ -4,31 +4,38 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
 import { ScreenCenter } from '@/components';
-import { REDIRECT_TO_SESSION_KEY } from '@/constants';
+import { REDIRECT_TO_SESSION_KEY, ROUTES } from '@/constants';
+
+/**
+ * Resolves the stored "return to" path so that we only ever navigate to a
+ * route inside this application (never to an absolute URL or back to the
+ * callback route itself).
+ */
+const getRedirectPath = () => {
+  const stored = sessionStorage.getItem(REDIRECT_TO_SESSION_KEY);
+  if (!stored || !stored.startsWith('/') || stored.startsWith('//')) {
+    return ROUTES.home;
+  }
+  if (stored.startsWith(ROUTES.callback)) return ROUTES.home;
+  return stored;
+};
 
 export const CallbackHandler = () => {
   const navigate = useNavigate();
-  const { handleRedirectCallback } = useAuth0();
-
-  const redirectTo =
-    sessionStorage.getItem(REDIRECT_TO_SESSION_KEY) ??
-    import.meta.env.VITE_APP_BASE_URL;
+  // Auth0Provider processes the `code` & `state` query params itself (and
+  // applies the sign-up role from appState). Calling handleRedirectCallback
+  // here as well consumes the same login transaction twice and produces
+  // "Invalid state" errors, so we only wait for the provider to finish.
+  const { isLoading, error } = useAuth0();
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    if (isLoading) return;
+    if (error) console.error('Login could not be completed:', error);
 
-    (async () => {
-      try {
-        await handleRedirectCallback();
-      } finally {
-        timer = setTimeout(() => {
-          navigate(redirectTo);
-        }, 1000);
-      }
-    })();
-
-    return () => clearTimeout(timer);
-  }, [redirectTo, navigate, handleRedirectCallback]);
+    const redirectTo = getRedirectPath();
+    sessionStorage.removeItem(REDIRECT_TO_SESSION_KEY);
+    navigate(redirectTo, { replace: true });
+  }, [isLoading, error, navigate]);
 
   return (
     <ScreenCenter>

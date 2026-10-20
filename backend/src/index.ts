@@ -11,7 +11,9 @@ const app = express();
 
 app.use(cors());
 
-app.use(express.json());
+// Quizzes may contain up to 100 long questions; the default 100kb limit
+// rejected large (but valid) quiz payloads with HTTP 413.
+app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (_req, res) => {
   res.status(200).send('OK');

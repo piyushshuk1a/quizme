@@ -11,7 +11,10 @@ import CreateQuizWithProvider from '../CreateQuiz';
 export const EditQuiz = () => {
   const { id: userId } = useUserInfo();
   const { id } = useParams() as { id: string };
-  const { isLoading, data, error, isValidating } = useFetch<
+  // Background revalidation must not remount the editor (it would discard
+  // unsaved edits), so only the initial load shows the spinner and the
+  // automatic refetch triggers are disabled.
+  const { isLoading, data, error } = useFetch<
     QuizDataWithCorrectOptions,
     { includeCorrectOptions: boolean }
   >({
@@ -20,6 +23,7 @@ export const EditQuiz = () => {
     refreshWhenHidden: false,
     refreshWhenOffline: false,
     revalidateOnFocus: false,
+    revalidateOnReconnect: false,
   });
 
   if (error) {
@@ -30,7 +34,7 @@ export const EditQuiz = () => {
     );
   }
 
-  if (isLoading || isValidating) {
+  if (isLoading) {
     return (
       <ScreenCenter>
         <CircularProgress />

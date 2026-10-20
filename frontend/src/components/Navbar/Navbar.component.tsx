@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Link } from '@mui/material';
 
-import { CALLBACK_URL } from '@/constants';
+import { APP_BASE_URL, CALLBACK_URL } from '@/constants';
 import { NAVBAR_BG_COLOR } from '@/theme';
 import { pxToRem, setRedirectTo } from '@/utils';
 
@@ -39,7 +39,7 @@ export const Navbar = () => {
         <Box display="flex" gap={42} position="relative" right={32}>
           <Link
             sx={{ fontSize: pxToRem(16), opacity: 0.7, fontWeight: 600 }}
-            to="#features"
+            to="/#features"
           >
             Features
           </Link>
@@ -77,7 +77,7 @@ export const Navbar = () => {
               onClick={() =>
                 logout({
                   logoutParams: {
-                    returnTo: import.meta.env.VITE_APP_BASE_URL,
+                    returnTo: APP_BASE_URL,
                   },
                 })
               }
