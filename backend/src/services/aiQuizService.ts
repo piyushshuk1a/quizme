@@ -111,12 +111,38 @@ async function failedProviderResponse(provider: string, response: Response) {
       (details?.error?.type ? ` type=${details.error.type}` : '') +
       (details?.error?.message ? ` message=${details.error.message}` : ''),
   );
+  const busy = response.status === 429 || response.status === 503;
   return new GenerationError(
-    response.status === 429 ? 429 : 502,
-    response.status === 429
+    busy ? 429 : 502,
+    busy
       ? 'AI is busy or its usage limit was reached. Please try again later.'
       : 'AI generation is temporarily unavailable. Please try again later.',
   );
+}
+
+/** Delays between retries for transient provider errors (429/503/5xx). */
+const retryDelaysMs = () =>
+  process.env.NODE_ENV === 'test' ? [1, 1] : [1500, 3000];
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Providers answer 503 ("high demand") or 429 during short spikes; a couple
+ * of spaced retries usually succeed and stay well within the 60s budget.
+ */
+async function fetchWithRetry(
+  fetchApi: typeof fetch,
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  let response = await fetchApi(url, init);
+  for (const delay of retryDelaysMs()) {
+    if (response.ok || ![429, 500, 502, 503, 504].includes(response.status))
+      break;
+    await sleep(delay);
+    response = await fetchApi(url, init);
+  }
+  return response;
 }
 
 type OpenAiResponse = {
@@ -130,24 +156,28 @@ async function generateWithOpenAi(
   settings: GenerationSettings,
   fetchApi: typeof fetch,
 ): Promise<string> {
-  const response = await fetchApi('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${settings.apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    signal: AbortSignal.timeout(60000),
-    body: JSON.stringify({
-      model: settings.model,
-      store: false,
-      max_output_tokens: 12000,
-      instructions: buildInstructions(request),
-      input: request.prompt,
-      text: {
-        format: { type: 'json_schema', name: 'quiz', strict: true, schema },
+  const response = await fetchWithRetry(
+    fetchApi,
+    'https://api.openai.com/v1/responses',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${settings.apiKey}`,
+        'Content-Type': 'application/json',
       },
-    }),
-  });
+      signal: AbortSignal.timeout(60000),
+      body: JSON.stringify({
+        model: settings.model,
+        store: false,
+        max_output_tokens: 12000,
+        instructions: buildInstructions(request),
+        input: request.prompt,
+        text: {
+          format: { type: 'json_schema', name: 'quiz', strict: true, schema },
+        },
+      }),
+    },
+  );
   if (!response.ok) throw await failedProviderResponse('OpenAI', response);
   const result = (await response.json()) as OpenAiResponse;
   const content =
@@ -176,7 +206,8 @@ async function generateWithGemini(
   settings: GenerationSettings,
   fetchApi: typeof fetch,
 ): Promise<string> {
-  const response = await fetchApi(
+  const response = await fetchWithRetry(
+    fetchApi,
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(settings.model)}:generateContent`,
     {
       method: 'POST',

@@ -149,6 +149,39 @@ test('Gemini provider sends a JSON schema request and returns the same editable 
   );
 });
 
+test('transient provider errors are retried and 503 maps to the busy message', async () => {
+  process.env.NODE_ENV = 'test';
+  let calls = 0;
+  const quiz = await generateQuiz(request, settings, async () => {
+    calls++;
+    return calls < 3
+      ? new Response(JSON.stringify({ error: { status: 'UNAVAILABLE' } }), {
+          status: 503,
+        })
+      : new Response(JSON.stringify(completed(generated)));
+  });
+  assert.equal(calls, 3);
+  assert.equal(quiz.title, generated.title);
+  calls = 0;
+  await assert.rejects(
+    generateQuiz(request, settings, async () => {
+      calls++;
+      return new Response('{}', { status: 503 });
+    }),
+    (error) => hasStatus(429)(error) && /busy/.test((error as Error).message),
+  );
+  assert.equal(calls, 3);
+  calls = 0;
+  await assert.rejects(
+    generateQuiz(request, settings, async () => {
+      calls++;
+      return new Response('{}', { status: 401 });
+    }),
+    hasStatus(502),
+  );
+  assert.equal(calls, 1);
+});
+
 test('missing key does not call the provider', async () => {
   await assert.rejects(
     generateQuiz(request, { model: 'test' }, async () => {
